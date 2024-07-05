@@ -1,0 +1,11 @@
+.vscode/
+template/
+reactphysics/
+
+*.irx
+*.elf
+*.a
+*.d
+*.o
+*.o.vsm
+*.o.vcl
