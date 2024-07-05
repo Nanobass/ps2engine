@@ -103,6 +103,7 @@ struct TextureBuffer
 
 class Texture
 {
+public:
     virtual TextureFormat GetFormat() = 0;
     virtual uint32_t GetWidth() = 0;
     virtual uint32_t GetHeight() = 0;
@@ -132,6 +133,10 @@ struct VertexBuffer
           mElementSize(std::exchange(other.mElementSize, 0)),
           mData(std::move(other.mData))
     {}
+
+    virtual void Aquire() {}
+    virtual void Release() {}
+
 };
 
 class PrimBuffer
@@ -215,10 +220,11 @@ public:
 class Device
 {
 public:
-    virtual Display* CreateDisplay() = 0;
-    virtual RenderContext* CreateRenderContext(Display* d) = 0;
-    virtual Texture* CreateTexture(TextureBuffer core) = 0;
-    virtual Texture* CreateTexture(TextureBuffer core, TextureBuffer palette) = 0;
+    virtual std::unique_ptr<Display> CreateDisplay() = 0;
+    virtual std::unique_ptr<RenderContext> CreateRenderContext(Display* d) = 0;
+    virtual std::unique_ptr<Texture> CreateTexture(TextureBuffer core) = 0;
+    virtual std::unique_ptr<Texture> CreateTexture(TextureBuffer core, TextureBuffer palette) = 0;
+    virtual std::unique_ptr<VertexBuffer> CreateVertexBuffer(uint32_t size, uint32_t elementSize) = 0;
 
 public:
     virtual ~Device() {};

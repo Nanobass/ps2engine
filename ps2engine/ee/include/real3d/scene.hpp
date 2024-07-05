@@ -51,10 +51,10 @@ struct Texture
     Scene* mScene;
     std::unique_ptr<pdi::Texture> mTexture;
 
-    Texture(uint32_t id, Scene* scene, pdi::Texture* texture)
+    Texture(uint32_t id, Scene* scene, std::unique_ptr<pdi::Texture> texture)
         : mID(id)
         , mScene(scene)
-        , mTexture(texture)
+        , mTexture(std::move(texture))
     {}
 };
 
@@ -64,10 +64,10 @@ struct VertexBuffer
     Scene* mScene;
     std::unique_ptr<pdi::VertexBuffer> mBuffer;
 
-    VertexBuffer(uint32_t id, Scene* scene, pdi::VertexBuffer* buffer)
+    VertexBuffer(uint32_t id, Scene* scene, std::unique_ptr<pdi::VertexBuffer> buffer)
         : mID(id)
         , mScene(scene)
-        , mBuffer(buffer)
+        , mBuffer(std::move(buffer))
     {}
 };
 
@@ -76,6 +76,7 @@ struct Mesh
     uint32_t mID;
     Scene* mScene;
     std::shared_ptr<Texture> mTexture;
+    std::vector<std::shared_ptr<VertexBuffer>> mReferences;
     std::vector<pdi::PrimBuffer> mBuffers;
 
     Mesh(uint32_t id, Scene* scene)
@@ -116,6 +117,77 @@ public:
         , mContext(context)
     {}
 
+    void PrintAllocations()
+    {
+        std::cout << "Scene Allocations:" << std::endl;
+        for(auto& texture : mTextures)
+        {
+            std::cout << "Texture: "
+                << "ID=" << texture.first << ", "
+                << "Refs=" << texture.second.use_count() << ", "
+                << "Width=" << texture.second->mTexture->GetWidth() << ", "
+                << "Height=" << texture.second->mTexture->GetHeight() << ", "
+                << "Format=" << texture.second->mTexture->GetFormat() 
+            << std::endl;
+        }
+        for(auto& buffer : mBuffers)
+        {
+            std::cout << "VertexBuffer: "
+                << "ID=" << buffer.first << ", "
+                << "Refs=" << buffer.second.use_count() << ", "
+                << "Size=" << buffer.second->mBuffer->mSize << ", "
+                << "ElementSize=" << buffer.second->mBuffer->mElementSize
+            << std::endl;
+        }
+        for(auto& mesh : mMeshes)
+        {
+            std::cout << "Mesh: "
+                << "ID=" << mesh.first << ", "
+                << "Refs=" << mesh.second.use_count()
+            << std::endl;
+        }
+        for(auto& model : mModels)
+        {
+            std::cout << "Model: "
+                << "ID=" << model.first << ", "
+                << "Refs=" << model.second.use_count()
+            << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+    void ClearUnreferencedAssets()
+    {
+        for (auto it = mModels.begin(); it != mModels.end(); ) {
+            if (it->second.use_count() <= 1) {
+                it = mModels.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        for (auto it = mMeshes.begin(); it != mMeshes.end(); ) {
+            if (it->second.use_count() <= 1) {
+                it = mMeshes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        for (auto it = mBuffers.begin(); it != mBuffers.end(); ) {
+            if (it->second.use_count() <= 1) {
+                it = mBuffers.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        for (auto it = mTextures.begin(); it != mTextures.end(); ) {
+            if (it->second.use_count() <= 1) {
+                it = mTextures.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     void DrawModel(Model* model)
     {
         mContext->PushMultMatrix(model->mTransform.GetTransformationMatrix());
@@ -128,16 +200,16 @@ public:
         mContext->PopMatrix();
     }
 
-    std::shared_ptr<Texture> AddTexture(const std::string& name, pdi::Texture* texture)
+    std::shared_ptr<Texture> AddTexture(const std::string& name, std::unique_ptr<pdi::Texture> texture)
     {
-        auto tex = std::make_shared<Texture>(joaat(name), this, texture);
+        auto tex = std::make_shared<Texture>(joaat(name), this, std::move(texture));
         mTextures[tex->mID] = tex;
         return tex;
     }
 
-    std::shared_ptr<VertexBuffer> AddVertexBuffer(const std::string& name, pdi::VertexBuffer* buffer)
+    std::shared_ptr<VertexBuffer> AddVertexBuffer(const std::string& name, std::unique_ptr<pdi::VertexBuffer> buffer)
     {
-        auto buf = std::make_shared<VertexBuffer>(joaat(name), this, buffer);
+        auto buf = std::make_shared<VertexBuffer>(joaat(name), this, std::move(buffer));
         mBuffers[buf->mID] = buf;
         return buf;
     }
@@ -196,8 +268,16 @@ void Mesh::AddPrimBufferVT(pdi::PrimType type, size_t count, const std::string& 
     pdi::PrimBuffer buffer;
     buffer.type = type;
     buffer.count = count;
-    buffer.mVertexBuffer = mScene->FindVertexBuffer(vertex)->mBuffer.get();
-    buffer.mTextureCoordBuffer = mScene->FindVertexBuffer(texcoords)->mBuffer.get();
+    {
+        auto vertexBuffer = mScene->FindVertexBuffer(vertex);
+        mReferences.push_back(vertexBuffer);
+        buffer.mVertexBuffer = vertexBuffer->mBuffer.get();        
+    }
+    {
+        auto textureCoordBuffer = mScene->FindVertexBuffer(texcoords);
+        mReferences.push_back(textureCoordBuffer);
+        buffer.mTextureCoordBuffer = textureCoordBuffer->mBuffer.get();        
+    }
     mBuffers.push_back(buffer);
 }
 

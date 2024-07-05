@@ -651,35 +651,37 @@ public:
         pglFinish();
     }
 
-    Display* CreateDisplay()
+    std::unique_ptr<Display> CreateDisplay()
     {
-        
-        PS2Display* display = new PS2Display;
-        return display;
+        return std::unique_ptr<Display>(new(GMA_STATIC) PS2Display);
     }
 
-    RenderContext* CreateRenderContext(Display* d)
+    std::unique_ptr<RenderContext> CreateRenderContext(Display* d)
     {
         PS2Display* display = static_cast<PS2Display*>(d);
-        PS2RenderContext* context = new PS2RenderContext(display);
-        return context;
+        return std::unique_ptr<RenderContext>(new(GMA_STATIC) PS2RenderContext(display));
     }
 
-    Texture* CreateTexture(TextureBuffer core) 
+    std::unique_ptr<Texture> CreateTexture(TextureBuffer core) 
     { 
-        return new PS2Texture(std::move(core), 0); 
+        return std::unique_ptr<Texture>(new(GMA_GRAPHICS) PS2Texture(std::move(core), 0)); 
     }
 
-    Texture* CreateTexture(TextureBuffer core, TextureBuffer palette) 
+    std::unique_ptr<Texture> CreateTexture(TextureBuffer core, TextureBuffer palette) 
     { 
-        return new PS2Texture(std::move(core), std::move(palette), 0);
+        return std::unique_ptr<Texture>(new(GMA_GRAPHICS) PS2Texture(std::move(core), std::move(palette), 0)); 
+    }
+
+    std::unique_ptr<VertexBuffer> CreateVertexBuffer(uint32_t size, uint32_t elementSize)
+    {
+        return std::unique_ptr<VertexBuffer>(new(GMA_GRAPHICS) VertexBuffer(size, elementSize));
     }
 
 };
 
-PS2Device* CreatePS2()
+std::unique_ptr<PS2Device> CreatePS2()
 {
-    return new PS2Device;
+    return std::unique_ptr<PS2Device>(new(GMA_STATIC) PS2Device);
 }
 
 } // namespace pdi

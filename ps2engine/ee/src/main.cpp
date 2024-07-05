@@ -26,6 +26,16 @@
 #include <iostream>
 #include <algorithm>
 
+/* ps2sdk */
+#include <tamtypes.h>
+#include <kernel.h>
+#include <sifrpc.h>
+#include <loadfile.h>
+#include <stdio.h>
+
+#include <ps2pad.hpp>
+using namespace Input;
+
 //========================================
 // Project Includes
 //========================================
@@ -53,7 +63,7 @@ struct GsTextureHeader {
     uint8_t mFunction;
 } __attribute__ ((packed));
 
-pdi::Texture* LoadGsTexture(const std::string& path, pdi::Device* device)
+std::unique_ptr<pdi::Texture> LoadGsTexture(const std::string& path, pdi::Device* device)
 {
     std::ifstream resource(path, std::ios_base::in);
     GsTextureHeader header;
@@ -72,6 +82,13 @@ pdi::Texture* LoadGsTexture(const std::string& path, pdi::Device* device)
     }
 }
 
+std::unique_ptr<pdi::VertexBuffer> CopyVertexBuffer(float* data, size_t size, size_t elementSize, pdi::Device* device)
+{
+    std::unique_ptr<pdi::VertexBuffer> buffer = device->CreateVertexBuffer(size, elementSize);
+    std::copy_n(data, size, buffer->mData.data());
+    return buffer;
+}
+
 float verts[] = {
     -1.0F, -1.0F, 0.0F,
      1.0F, -1.0F, 0.0F,
@@ -88,11 +105,16 @@ float texels[] = {
 
 int main(int argc, char const *argv[])
 {
-    pdi::PS2Device* device = pdi::CreatePS2();
-
-    pdi::Display* display = device->CreateDisplay();
+    auto device = pdi::CreatePS2();
+    auto display = device->CreateDisplay();
     display->InitDisplay(640, 512, 32);
-    pdi::RenderContext* context = device->CreateRenderContext(display);
+    auto context = device->CreateRenderContext(display.get());
+
+    SifLoadModule("host0:/irx/sio2man.irx", 0, NULL);
+    SifLoadModule("host0:/irx/padman.irx", 0, NULL);
+    padInit(0);
+    Pad::PadDevice pad;
+    pad.Open(0, 0);
 
     context->SetClearColor(Math::Color(0.1F, 0.1F, 0.1F));
     context->SetClearDepth(1.0F);
@@ -104,29 +126,27 @@ int main(int argc, char const *argv[])
     context->EnableLighting(true);
     context->SetLight(0, pdi::PDI_LIGHT_DIRECTIONAL, Math::Color(1.0F, 1.0F, 1.0F), Math::Vec3(0, 0, 0), Math::Vec3(0, 0, 1));
 
-    r3d::Scene scene(device, display, context);
-
-    {
-        pdi::Texture* grass = LoadGsTexture("host:grass128_32bit.gs", device);
-        pdi::VertexBuffer* vertices = new(GMA_GRAPHICS) pdi::VertexBuffer(12, 3);
-        pdi::VertexBuffer* texcoords = new(GMA_GRAPHICS) pdi::VertexBuffer(8, 2);
-        
-        std::copy_n(verts, 12, vertices->mData.data());
-        std::copy_n(texels, 8, texcoords->mData.data());
-
-        scene.AddTexture("grass", grass);
-        scene.AddVertexBuffer("grass_v", vertices);
-        scene.AddVertexBuffer("grass_t", texcoords);
-    }
+    r3d::Scene scene(device.get(), display.get(), context.get());
+    scene.AddTexture("grass", LoadGsTexture("host:grass128_32bit.gs", device.get()));
+    scene.AddTexture("fabian", LoadGsTexture("host:fabian256_32bit.gs", device.get()));
+    scene.AddVertexBuffer("quad_v", CopyVertexBuffer(verts, 12, 3, device.get()));
+    scene.AddVertexBuffer("quad_t", CopyVertexBuffer(texels, 8, 2, device.get()));
     
-    std::shared_ptr<r3d::Model> grass_model;
+    std::shared_ptr<r3d::Model> grass_model, fabian_model;
     {
-        
         std::shared_ptr<r3d::Mesh> grass_m = scene.CreateMesh("grass_m");
         grass_m->SetTexture("grass");
-        grass_m->AddPrimBufferVT(pdi::PRIM_TRIANGLE_STRIP, 4, "grass_v", "grass_t");
+        grass_m->AddPrimBufferVT(pdi::PRIM_TRIANGLE_STRIP, 4, "quad_v", "quad_t");
         grass_model = scene.CreateModel("grass_model", "grass_m");
+
+        std::shared_ptr<r3d::Mesh> fabian_m = scene.CreateMesh("fabian_m");
+        fabian_m->SetTexture("fabian");
+        fabian_m->AddPrimBufferVT(pdi::PRIM_TRIANGLE_STRIP, 4, "quad_v", "quad_t");
+        fabian_model = scene.CreateModel("fabian_model", "fabian_m");
     }
+
+    grass_model->mTransform.mPosition.x = -1.25F;
+    fabian_model->mTransform.mPosition.x = 1.25F;
 
     Math::Camera camera;
     camera.mPosition = Math::Vec3(0, 0, 1.5F);
@@ -134,18 +154,22 @@ int main(int argc, char const *argv[])
     camera.mUp = Math::Vec3(0, 1, 0);
 
     do {
+        pad.Poll();
+        if(pad.InputChanged(Pad::Square) && pad.GetInput(Pad::Square).mPressed) grass_model = nullptr;
+        if(pad.InputChanged(Pad::Circle) && pad.GetInput(Pad::Circle).mPressed) fabian_model = nullptr;
+        if(pad.InputChanged(Pad::Triangle) && pad.GetInput(Pad::Triangle).mPressed) scene.PrintAllocations();
+        if(pad.InputChanged(Pad::Select) && pad.GetInput(Pad::Select).mPressed) scene.ClearUnreferencedAssets();
+
         context->BeginFrame();
         context->Clear(pdi::PDI_COLOR_BUFFER | pdi::PDI_DEPTH_BUFFER);
 
         context->LoadMatrix(camera.GetViewMatrix());
-        scene.DrawModel(grass_model.get());
+        if(grass_model != nullptr) scene.DrawModel(grass_model.get());
+        if(fabian_model != nullptr) scene.DrawModel(fabian_model.get());
 
         context->EndFrame();
         display->SwapBuffers();
     } while (1);
 
-    delete context;
-    delete display;
-    delete device;
     return 0;
 }
