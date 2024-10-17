@@ -143,20 +143,40 @@ public:
         return mData[index];
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const buffer<T, Alloc>& buffer)
-    {
-        os.write((const char*)buffer.mData, buffer.mSize * sizeof(T));
-        return os;
-    }
-
-    friend std::istream& operator>>(std::istream& is, buffer<T, Alloc>& buffer)
-    {
-        is.read((char*)buffer.mData, buffer.mSize * sizeof(T));
-        return is;
-    }
-
 private:
     std::size_t mSize;
     T* mData;
     GameMemoryAllocator mAllocator;
 };
+
+namespace stream
+{
+    
+template <typename T>
+void read_buf(std::istream& in, T* data, size_t n)
+{
+    in.read((char*)data, n*sizeof(T));
+}
+
+template <typename T>
+void read_buf(std::istream& in, buffer<T>& buffer)
+{
+    in.read((char*)buffer.data(), buffer.size()*sizeof(T));
+}
+
+void read_string(std::istream& in, std::string& string)
+{
+    uint16_t size; in.read((char*)&size,sizeof(size));
+    string.resize(size);
+    read_buf(in, string.data(), string.size());
+}
+
+template <typename T>
+T read(std::istream& in)
+{
+    T t;
+    read_buf(in, &t, 1);
+    return t;
+}
+
+} // namespace Stream

@@ -32,83 +32,119 @@
 #include <sifrpc.h>
 #include <loadfile.h>
 #include <stdio.h>
+#include <graph.h>
+#include <gs_psm.h>
+#include <osd_config.h>
 
-#include <ps2pad.hpp>
-using namespace Input;
+/* ps2gl */
+#include <GL/ps2gl.h>
+#include <GL/gl.h>
+
+/* ps2stuff */
+#include <ps2s/gs.h>
 
 //========================================
 // Project Includes
 //========================================
 
+/* ps2memory */
 #include <memory/memory.hpp>
-#include <pdi/pdi.hpp>
 
-#ifdef PLATFORM_PS2
-#include <pdi/ps2/pdips2.hpp>
-#endif
+/* ps2glu */
+#include <ps2glu.hpp>
 
-#include <real3d/real3d.hpp>
-#include <real3d/scene.hpp>
+/* ps2math */
+#include <ps2math.hpp>
 
-struct GsTextureHeader {
-    static const uint32_t MAGIC = 'G' | ('T' << 8) | ('E' << 16) | ('X' << 24);
-    uint32_t mMagic;
-    uint16_t mWidth;
-    uint16_t mHeight;
-    uint8_t mPsm;
-    uint16_t mClutWidth;
-    uint16_t mClutHeight;
-    uint8_t mClutPsm;
-    uint8_t mComponents;
-    uint8_t mFunction;
-} __attribute__ ((packed));
+/* ps2pad */
+#include <ps2pad.hpp>
 
-std::unique_ptr<pdi::Texture> LoadGsTexture(const std::string& path, pdi::Device* device)
+using namespace Input;
+
+namespace ps2
 {
-    std::ifstream resource(path, std::ios_base::in);
-    GsTextureHeader header;
-    resource.read((char*) &header, sizeof(GsTextureHeader));
-
-    pdi::TextureBuffer core(header.mWidth, header.mHeight, pdi::ps2::GetTextureFormat((GS::tPSM) header.mPsm));
-    resource >> core.mData;
-
-    if( header.mPsm == GS_PSM_8 || header.mPsm == GS_PSM_4 )
+float GetSystemAspectRatio()
+{
+    switch (configGetTvScreenType())
     {
-        pdi::TextureBuffer clut(header.mClutWidth, header.mClutHeight, pdi::ps2::GetTextureFormat((GS::tPSM) header.mClutPsm));
-        resource >> clut.mData;
-        return device->CreateTexture(std::move(core), std::move(clut));
-    } else {
-        return device->CreateTexture(std::move(core));
+    case TV_SCREEN_43: return 4.0F / 3.0F;
+    case TV_SCREEN_169: return 16.0F / 9.0F;
+    case TV_SCREEN_FULL: return 1.0F; // should i ingore this one???
+    default: return 4.0F / 3.0F; // we should never get here!!!
     }
 }
-
-std::unique_ptr<pdi::VertexBuffer> CopyVertexBuffer(float* data, size_t size, size_t elementSize, pdi::Device* device)
-{
-    std::unique_ptr<pdi::VertexBuffer> buffer = device->CreateVertexBuffer(size, elementSize);
-    std::copy_n(data, size, buffer->mData.data());
-    return buffer;
 }
-
-float verts[] = {
-    -1.0F, -1.0F, 0.0F,
-     1.0F, -1.0F, 0.0F,
-    -1.0F,  1.0F, 0.0F,
-     1.0F,  1.0F, 0.0F,
-};
-
-float texels[] = {
-    0.0F,  1.0F,
-    1.0F,  1.0F,
-    0.0F,  0.0F,
-    1.0F,  0.0F,
-};
 
 int main(int argc, char const *argv[])
 {
-    auto device = pdi::CreatePS2();
-    auto display = device->CreateDisplay();
-    display->InitDisplay(640, 512, 32);
-    auto context = device->CreateRenderContext(display.get());
+    *(GIF::Registers::ctrl) = 1; // OSDSYS leaves path 3 busy, so fix that
+    pglInit(64 * 1024, 1000); // initialize ps2gl, small immediate buffers because we don't use immediate mode, nevermind buffers need to be biiiig
+
+    int mWidth = 640;
+    int mHeight = 512;
+    graph_set_mode(GRAPH_MODE_INTERLACED, GRAPH_MODE_PAL, GRAPH_MODE_FIELD, GRAPH_ENABLE);
+    pgl_slot_handle_t frame_slot_0 = pglAddGsMemSlot(  0, 80, GS_PSM_24);
+    pgl_slot_handle_t frame_slot_1 = pglAddGsMemSlot( 80, 80, GS_PSM_24);
+    pgl_slot_handle_t depth_slot   = pglAddGsMemSlot(160, 80, GS_PSMZ_24);
+    pglLockGsMemSlot(frame_slot_0);
+    pglLockGsMemSlot(frame_slot_1);
+    pglLockGsMemSlot(depth_slot);
+    pgl_area_handle_t frame_area_0 = pglCreateGsMemArea(mWidth, mHeight, GS_PSM_24);
+    pgl_area_handle_t frame_area_1 = pglCreateGsMemArea(mWidth, mHeight, GS_PSM_24);
+    pgl_area_handle_t depth_area   = pglCreateGsMemArea(mWidth, mHeight, GS_PSMZ_24);
+    pglBindGsMemAreaToSlot(frame_area_0, frame_slot_0);
+    pglBindGsMemAreaToSlot(frame_area_1, frame_slot_1);
+    pglBindGsMemAreaToSlot(depth_area, depth_slot);
+    pglSetDrawBuffers(PGL_INTERLACED, frame_area_0, frame_area_1, depth_area);
+    pglSetDisplayBuffers(PGL_INTERLACED, frame_area_0, frame_area_1);
+
+    // TODO implement texture pages
+    // 8 bit textures mangled into the frame and depth buffers
+    // 128x128
+    pglAddGsMemSlot(0,    8,   GS::kPsm8h);
+    pglAddGsMemSlot(8,    8,   GS::kPsm8h);
+    pglAddGsMemSlot(16,   8,   GS::kPsm8h);
+    pglAddGsMemSlot(24,   8,   GS::kPsm8h);
+    // 256x128
+    pglAddGsMemSlot(32,   16,  GS::kPsm8h);
+    // 256x256
+    pglAddGsMemSlot(48,   32,  GS::kPsm8h);
+    pglAddGsMemSlot(80,   32,  GS::kPsm8h);
+    // 512x256
+    pglAddGsMemSlot(112,  64,  GS::kPsm8h);
+    pglAddGsMemSlot(176,  64,  GS::kPsm8h);
+
+    // fill the rest with 32 bit textures
+    // 64x32
+    pglAddGsMemSlot(240,  1,   GS::kPsm32);
+    pglAddGsMemSlot(241,  1,   GS::kPsm32);
+    pglAddGsMemSlot(242,  1,   GS::kPsm32);
+    pglAddGsMemSlot(243,  1,   GS::kPsm32);
+    // 64x64
+    pglAddGsMemSlot(244,  2,   GS::kPsm32);
+    pglAddGsMemSlot(246,  2,   GS::kPsm32);
+    pglAddGsMemSlot(248,  2,   GS::kPsm32);
+    pglAddGsMemSlot(250,  2,   GS::kPsm32);
+    pglAddGsMemSlot(252,  2,   GS::kPsm32);
+    pglAddGsMemSlot(254,  2,   GS::kPsm32);
+    // 128x128
+    pglAddGsMemSlot(256,  8,   GS::kPsm32);
+    pglAddGsMemSlot(264,  8,   GS::kPsm32);
+    pglAddGsMemSlot(272,  8,   GS::kPsm32);
+    pglAddGsMemSlot(280,  8,   GS::kPsm32);
+    pglAddGsMemSlot(288,  8,   GS::kPsm32);
+    pglAddGsMemSlot(296,  8,   GS::kPsm32);
+    pglAddGsMemSlot(304,  8,   GS::kPsm32);
+    pglAddGsMemSlot(312,  8,   GS::kPsm32);
+    // 256x256
+    pglAddGsMemSlot(320,  32,  GS::kPsm32);
+    pglAddGsMemSlot(352,  32,  GS::kPsm32);
+    // 512x256
+    pglAddGsMemSlot(384,  64,  GS::kPsm32);
+    pglAddGsMemSlot(448,  64,  GS::kPsm32);
+    
+    pglPrintGsMemAllocation();
+    float mAspectRatio = ps2::GetSystemAspectRatio();
 
     SifLoadModule("host0:/irx/sio2man.irx", 0, NULL);
     SifLoadModule("host0:/irx/padman.irx", 0, NULL);
@@ -116,38 +152,21 @@ int main(int argc, char const *argv[])
     Pad::PadDevice pad;
     pad.Open(0, 0);
 
-    context->SetClearColor(Math::Color(0.1F, 0.1F, 0.1F));
-    context->SetClearDepth(1.0F);
-    context->SetAmbientLight(Math::Color(1.0F, 1.0F, 1.0F));
-    context->EnableZBuffer(true);
-    context->SetCullMode(pdi::PDI_CULL_OFF);
-    context->SetViewport(0, 0, display->GetWidth(), display->GetHeight());
-    context->SetPerspective(1.0F, 4000.0F, 90.0F, display->GetAspectRatio());
-    context->EnableLighting(true);
-    context->SetLight(0, pdi::PDI_LIGHT_DIRECTIONAL, Math::Color(1.0F, 1.0F, 1.0F), Math::Vec3(0, 0, 0), Math::Vec3(0, 0, 1));
+    bool mFirstFrame = true;
 
-    r3d::Scene scene(device.get(), display.get(), context.get());
-    scene.AddTexture("grass", LoadGsTexture("host:grass128_32bit.gs", device.get()));
-    scene.AddTexture("fabian", LoadGsTexture("host:fabian256_32bit.gs", device.get()));
-    scene.AddVertexBuffer("quad_v", CopyVertexBuffer(verts, 12, 3, device.get()));
-    scene.AddVertexBuffer("quad_t", CopyVertexBuffer(texels, 8, 2, device.get()));
-    
-    std::shared_ptr<r3d::Model> grass_model, fabian_model;
-    {
-        std::shared_ptr<r3d::Mesh> grass_m = scene.CreateMesh("grass_m");
-        grass_m->SetTexture("grass");
-        grass_m->AddPrimBufferVT(pdi::PRIM_TRIANGLE_STRIP, 4, "quad_v", "quad_t");
-        grass_model = scene.CreateModel("grass_model", "grass_m");
+    gluClearColor(Math::Color(0.1F, 0.1F, 0.1F));
+    glClearDepth(1.0F);
+    gluAmbientLight(Math::Color(1.0F, 1.0F, 1.0F));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_RESCALE_NORMAL);
+    glDisable(GL_CULL_FACE);
+    glViewport(0, 0, 640, 512);
+    gluPerspective(70.0F, 1.0F, 4000.0F, mAspectRatio);
+    glMatrixMode(GL_MODELVIEW);
+    glEnable(GL_LIGHTING);
 
-        std::shared_ptr<r3d::Mesh> fabian_m = scene.CreateMesh("fabian_m");
-        fabian_m->SetTexture("fabian");
-        fabian_m->AddPrimBufferVT(pdi::PRIM_TRIANGLE_STRIP, 4, "quad_v", "quad_t");
-        fabian_model = scene.CreateModel("fabian_model", "fabian_m");
-    }
-
-    grass_model->mTransform.mPosition.x = -1.25F;
-    fabian_model->mTransform.mPosition.x = 1.25F;
-
+    Math::Vec4 cameraRotation(0, 0, 0);
     Math::Camera camera;
     camera.mPosition = Math::Vec3(0, 0, 1.5F);
     camera.mLookAt = Math::Vec3(0, 0, 0);
@@ -155,21 +174,39 @@ int main(int argc, char const *argv[])
 
     do {
         pad.Poll();
-        if(pad.InputChanged(Pad::Square) && pad.GetInput(Pad::Square).mPressed) grass_model = nullptr;
-        if(pad.InputChanged(Pad::Circle) && pad.GetInput(Pad::Circle).mPressed) fabian_model = nullptr;
-        if(pad.InputChanged(Pad::Triangle) && pad.GetInput(Pad::Triangle).mPressed) scene.PrintAllocations();
-        if(pad.InputChanged(Pad::Select) && pad.GetInput(Pad::Select).mPressed) scene.ClearUnreferencedAssets();
 
-        context->BeginFrame();
-        context->Clear(pdi::PDI_COLOR_BUFFER | pdi::PDI_DEPTH_BUFFER);
+        cameraRotation.x += -pad.GetInput(Pad::RightY).mInputValue * 0.02f * 2;
+        cameraRotation.y += -pad.GetInput(Pad::RightX).mInputValue * 0.02f * 2;
 
-        context->LoadMatrix(camera.GetViewMatrix());
-        if(grass_model != nullptr) scene.DrawModel(grass_model.get());
-        if(fabian_model != nullptr) scene.DrawModel(fabian_model.get());
+        // Move Camera
+        Math::Mat4 matrix = Math::RotationY(cameraRotation.y) * Math::RotationX(cameraRotation.x);
+        camera.mPosition += matrix * Math::Vec4(0, 0, -1) * -pad.GetInput(Pad::LeftY).mInputValue * 0.02f * 15;
+        camera.mPosition += matrix * Math::Vec4(1, 0, 0) * pad.GetInput(Pad::LeftX).mInputValue * 0.02f * 15;
+        camera.mPosition += matrix * Math::Vec4(0, 1, 0) * (-pad.GetInput(Pad::L2).mInputValue + pad.GetInput(Pad::R2).mInputValue) * 0.02f * 15;
+        camera.mLookAt = camera.mPosition + matrix * Math::Vec4(0, 0, -1);
 
-        context->EndFrame();
-        display->SwapBuffers();
+        pglBeginGeometry();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        gluLoadMatrix(camera.GetViewMatrix());
+        gluSetLight(0, GLU_LIGHT_DIRECTIONAL, Math::Color(1.0F, 1.0F, 1.0F), Math::Vec3(0, 0, 0), Math::Vec3(0, 0, 1));
+        
+        glBegin(GL_QUADS);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 1, 0);
+        glVertex3f(1, 1, 0);
+        glVertex3f(1, 0, 0);
+        glEnd();
+
+        pglEndGeometry();
+        if(!mFirstFrame) pglFinishRenderingGeometry(PGL_DONT_FORCE_IMMEDIATE_STOP);
+        else mFirstFrame = false;
+        pglWaitForVSync();
+        pglSwapBuffers();
+        pglRenderGeometry();
     } while (1);
+
+    pglFinish();
 
     return 0;
 }

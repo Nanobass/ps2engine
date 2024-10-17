@@ -1,6 +1,7 @@
 .vscode/
 template/
-reactphysics/
+assets/
+pdi/
 
 *.irx
 *.elf
