@@ -617,7 +617,7 @@ Mat4 Projection(const float& fov, const float& width, const float& height, const
     output.matrix[3] = 0.0F;
 
     output.matrix[4] = 0.0F;
-    output.matrix[5] = -h;
+    output.matrix[5] = h;
     output.matrix[6] = 0.0F;
     output.matrix[7] = 0.0F;
 

@@ -13,7 +13,8 @@
 
 EE_BIN=ps2engine.elf
 
-EE_INCS=	
+EE_INCS=	-I$(PS2LUA_SRC)/ps2gl/include \
+			-I$(PS2LUA_SRC)/ps2stuff/include
 			
 EE_LIBS=	-L$(PS2LUA_SRC)/ps2gl/ -lps2gl \
 			-L$(PS2LUA_SRC)/ps2stuff/ -lps2stuff \
