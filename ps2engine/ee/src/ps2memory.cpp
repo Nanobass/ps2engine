@@ -5,13 +5,13 @@
 // ---------------------------------------------------
 // Open Source Game Engine for Playstation 2
 //
-// File:        level.hpp
+// File:        ps2memory.cpp
 //
-// Description: Level halt ne
+// Description: 
 //
 //=============================================================================
 
-#pragma once
+#include <ps2memory.hpp>
 
 //========================================
 // System Includes
@@ -21,15 +21,18 @@
 // Project Includes
 //========================================
 
-#include <ps2math.hpp>
-#include <ps2memory.hpp>
 
-namespace Engine
+uint32_t joaat(const std::string& str)
 {
-
-struct Level
-{
-
-};
-    
-} // namespace Engine
+	uint32_t hash = 0;
+	for (const char c : str)
+	{
+		hash += c;
+		hash += (hash << 10);
+		hash ^= (hash >> 6);
+	}
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
+	return hash;
+}

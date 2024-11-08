@@ -18,8 +18,6 @@
 //========================================
 
 /* standard library */
-
-#include <vector>
 #include <memory>
 #include <map>
 
@@ -44,75 +42,31 @@
 namespace Engine
 {
 
-enum TextureFormat
-{
-    TEXTURE_RGBA_8_8_8_8,
-    TEXTURE_RGB_8_8_8,
-    TEXTURE_RGBA_5_5_5_1,
-    TEXTURE_RGBA_4_4_4_4,
-    TEXTURE_INDEX_8,
-    TEXTURE_INDEX_4,
-    TEXTURE_INVALID = -1
-};
-
-namespace GL
-{
-void GetOpenGLTextureFormatAndType(TextureFormat texformat, GLenum& format, GLenum& type)
-{
-    switch (texformat)
-        {
-        case TEXTURE_RGBA_8_8_8_8: 
-            format = GL_RGBA;
-            type = GL_UNSIGNED_INT_8_8_8_8;
-        break;
-        case TEXTURE_RGB_8_8_8: 
-            format = GL_RGB;
-            type = GL_UNSIGNED_BYTE;
-        break;
-        case TEXTURE_RGBA_5_5_5_1: 
-            format = GL_RGBA;
-            type = GL_UNSIGNED_SHORT_5_5_5_1;
-        break;
-        case TEXTURE_RGBA_4_4_4_4:
-            format = GL_RGBA;
-            type = GL_UNSIGNED_SHORT_4_4_4_4;
-        break;
-        case TEXTURE_INDEX_8:  
-            format = GL_COLOR_INDEX;
-            type = GL_UNSIGNED_BYTE;
-        break;
-        case TEXTURE_INDEX_4:
-            format = GL_COLOR_INDEX;
-            type = GL_UNSIGNED_SHORT_4_4_4_4; // is this right????, no it's not!!! ps2gl has no 4 bit textures (yet)
-        break;
-        case TEXTURE_INVALID: break;
-    }
-}
-} // namespace opengl
-
 namespace PS2
 {
 
-TextureFormat GetTextureFormat(GS::tPSM psm)
+void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type)
 {
     switch(psm)
     {
         case GS::kPsm32: 
-            return TEXTURE_RGBA_8_8_8_8;
+            format = GL_RGBA;
+            type = GL_UNSIGNED_BYTE;
+        break;
         case GS::kPsm24: 
-            return TEXTURE_RGB_8_8_8;
-        case GS::kPsm16: 
-        case GS::kPsm16s: 
-            return TEXTURE_RGBA_5_5_5_1;
-        case GS::kPsm8: 
-        case GS::kPsm8h: 
-            return TEXTURE_INDEX_8;
-        case GS::kPsm4: 
-        case GS::kPsm4hh: 
-        case GS::kPsm4hl: 
-            return TEXTURE_INDEX_4;
-        default: 
-            return TEXTURE_INVALID;
+            format = GL_RGB;
+            type = GL_UNSIGNED_BYTE;
+        break;
+        case GS::kPsm16:
+            format = GL_RGBA;
+            type = GL_UNSIGNED_SHORT_5_5_5_1;
+        break;
+        case GS::kPsm8:
+            format = GL_COLOR_INDEX;
+            type = GL_UNSIGNED_BYTE;
+        break;
+        default:
+        break;
     }
 }
     
@@ -120,35 +74,25 @@ TextureFormat GetTextureFormat(GS::tPSM psm)
 
 struct TextureBuffer
 {
-    static uint32_t GetSize(uint16_t width, uint16_t height, TextureFormat psm)
+    static uint32_t GetSize(uint16_t width, uint16_t height, uint8_t bpp)
     {
-        switch(psm)
-        {
-        case TEXTURE_RGBA_8_8_8_8: 
-            return width * height * 4;
-        case TEXTURE_RGB_8_8_8: 
-            return width * height * 3;
-        case TEXTURE_RGBA_5_5_5_1: 
-        case TEXTURE_RGBA_4_4_4_4:
-            return width * height * 2;
-        case TEXTURE_INDEX_8:
-            return width * height;
-        case TEXTURE_INDEX_4:
-            return width * height * 4 / 8;
-        default: return 0;
-        }
+        return width * height * bpp / 8;
     }
 
     uint16_t mWidth = 0;
     uint16_t mHeight = 0;
-    TextureFormat mFormat = TEXTURE_INVALID;
+    uint8_t mBpp = 0;
+    GLenum mFormat = GL_INVALID_ENUM;
+    GLenum mType = GL_INVALID_ENUM;
     buffer<uint8_t> mData;
 
-    TextureBuffer(uint16_t width, uint16_t height, TextureFormat format)
+    TextureBuffer(uint16_t width, uint16_t height, uint8_t bpp, GLenum format, GLenum type)
         :   mWidth(width),
             mHeight(height),
+            mBpp(bpp),
             mFormat(format),
-            mData(GetSize(), GMA_GRAPHICS) // store textures in graphics
+            mType(type),
+            mData(GetSize())
     {}
 
     TextureBuffer(const TextureBuffer&) = delete;
@@ -157,24 +101,26 @@ struct TextureBuffer
     TextureBuffer(TextureBuffer&& other) noexcept
         : mWidth(std::exchange(other.mWidth, 0)),
           mHeight(std::exchange(other.mHeight, 0)),
-          mFormat(std::exchange(other.mFormat, TEXTURE_INVALID)),
+          mBpp(std::exchange(other.mBpp, 0)),
+          mFormat(std::exchange(other.mFormat, GL_INVALID_ENUM)),
+          mType(std::exchange(other.mType, GL_INVALID_ENUM)),
           mData(std::move(other.mData))
     {}
 
     uint32_t GetSize() 
     {
-        return GetSize(mWidth, mHeight, mFormat);
+        return GetSize(mWidth, mHeight, mBpp);
     }
 };
 
 struct Texture 
 {
-    uint32_t mName;
+    name mName;
     TextureBuffer* mCore = nullptr;
     TextureBuffer* mClutBuffer = nullptr;
     GLuint mGLName;
 
-    Texture(uint32_t name, TextureBuffer core) : mName(name), mGLName(0)
+    Texture(name name, TextureBuffer core) : mName(name), mGLName(0)
     {
         mCore = new TextureBuffer(std::move(core));
         glGenTextures(1, &mGLName);
@@ -182,7 +128,7 @@ struct Texture
         operator<<(std::cout << "Texture Created: ") << std::endl;
     }
 
-    Texture(uint32_t name, TextureBuffer core, TextureBuffer clut) : mName(name)
+    Texture(name name, TextureBuffer core, TextureBuffer clut) : mName(name)
     {
         mCore = new TextureBuffer(std::move(core));
         mClutBuffer = new TextureBuffer(std::move(clut));
@@ -201,69 +147,28 @@ struct Texture
 
     void Upload()
     {
-        GLenum format, type;
-        GL::GetOpenGLTextureFormatAndType(mCore->mFormat, format, type);
         glBindTexture(GL_TEXTURE_2D, mGLName);
-        glTexImage2D(GL_TEXTURE_2D, 0 /* mipmap */, GL_RGBA /* ignored */, mCore->mWidth, mCore->mHeight, 0 /* border */, format, type, mCore->mData.data());
+        glTexImage2D(GL_TEXTURE_2D, 0 /* mipmap */, GL_RGBA /* ignored */, mCore->mWidth, mCore->mHeight, 0 /* border */, mCore->mFormat, mCore->mType, mCore->mData.data());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        if(mClutBuffer)
-        {
-            uint32_t width = 0;
-            if(mCore->mFormat == TEXTURE_INDEX_8) width = 256;
-            else if(mCore->mFormat == TEXTURE_INDEX_4) width = 16;
-            GLenum format, type;
-            GL::GetOpenGLTextureFormatAndType(mClutBuffer->mFormat, format, type);
-            glColorTable(GL_COLOR_TABLE, GL_RGBA, width, format, type, mClutBuffer->mData.data());
-        }
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    TextureFormat GetFormat() { return mCore->mFormat; }
-    uint32_t GetWidth() { return mCore->mWidth; }
-    virtual uint32_t GetHeight() { return mCore->mHeight; }
-    virtual uint8_t GetNumberOfMipMaps() { return 1; }
+    void Bind()
+    {
+        glBindTexture(GL_TEXTURE_2D, mGLName);
+        if(mClutBuffer) glColorTable(GL_COLOR_TABLE, GL_RGBA, 256, GL_RGBA, GL_UNSIGNED_INT, mClutBuffer->mData.data());
+    }
+
+    int GetWidth() const { return mCore->mWidth; }
+    int GetHeight() const { return mCore->mHeight; }
 
     std::ostream& operator<<(std::ostream& os)
     {
-        os << "Texture ID=" << mName << " GL=" << mGLName << " " << mCore->mWidth << "x" << mCore->mHeight << " "; 
-        switch (mCore->mFormat)
-        {
-        case TEXTURE_RGBA_8_8_8_8:
-            os << "32-Bit";
-        break;
-        case TEXTURE_RGB_8_8_8:
-            os << "24-Bit";
-        break;
-        case TEXTURE_RGBA_5_5_5_1:
-            os << "16-Bit";
-        break;
-        case TEXTURE_INDEX_8:
-            os << "8-Bit";
-        break;
-        case TEXTURE_INDEX_4:
-            os << "4-Bit";
-        break;
-        default: break;
-        }
-        if(mClutBuffer && (mCore->mFormat == TEXTURE_INDEX_8 || mCore->mFormat == TEXTURE_INDEX_4))
-        {
-            switch (mClutBuffer->mFormat)
-            {
-                case TEXTURE_RGBA_8_8_8_8:
-                    os << " (32-Bit)";
-                break;
-                case TEXTURE_RGB_8_8_8:
-                    os << " (24-Bit)";
-                break;
-                case TEXTURE_RGBA_5_5_5_1:
-                    os << " (16-Bit)";
-                break;
-                default: break;
-            }
-        }
+        os << "Texture ID=\"" << mName.mStringName << "\" (" << mName.mID << ")" << " GL=" << mGLName << " " << mCore->mWidth << "x" << mCore->mHeight; 
         return os;
     }
 
@@ -319,6 +224,10 @@ struct TextureManager
         // 512x256
         pglAddGsMemSlot(384,  64,  GS::kPsm32);
         pglAddGsMemSlot(448,  64,  GS::kPsm32);
+        
+        glEnable(GL_TEXTURE_2D); // kinda needed
+        glEnable(GL_BLEND); // free on ps2 iirc
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // no one uses the rest
     }
 
     ~TextureManager()
@@ -326,38 +235,51 @@ struct TextureManager
         mTextures.clear();
     }
 
-    Texture* LoadGsTexture(const uint32_t& name, const std::string& path)
+    Texture* LoadGsTexture(const name& name, const std::string& path)
     {
         std::ifstream resource(path, std::ios_base::in);
         GsTextureHeader header;
         resource.read((char*) &header, sizeof(GsTextureHeader));
 
-        TextureBuffer core(header.mWidth, header.mHeight, PS2::GetTextureFormat((GS::tPSM) header.mPsm));
-        stream::read_buf(resource, core.mData);
+        GLenum format, type;
+        PS2::GetOpenGLFormatAndType((GS::tPSM) header.mPsm, format, type);
+        uint8_t bpp = 0;
+        if(header.mPsm == GS_PSM_4) bpp = 4;
+        if(header.mPsm == GS_PSM_8) bpp = 8;
+        if(header.mPsm == GS_PSM_16) bpp = 16;
+        if(header.mPsm == GS_PSM_24) bpp = 24;
+        if(header.mPsm == GS_PSM_32) bpp = 32;
+
+        TextureBuffer core(header.mWidth, header.mHeight, bpp, format, type);
+        resource.read((char*) core.mData.data(), core.mData.size());
 
         if( header.mPsm == GS_PSM_8 || header.mPsm == GS_PSM_4 )
         {
-            TextureBuffer clut(header.mClutWidth, header.mClutHeight, PS2::GetTextureFormat((GS::tPSM) header.mClutPsm));
-            stream::read_buf(resource, clut.mData);
+            PS2::GetOpenGLFormatAndType((GS::tPSM) header.mPsm, format, type);
+            if(header.mClutPsm == GS_PSM_16) bpp = 16;
+            if(header.mClutPsm == GS_PSM_24) bpp = 24;
+            if(header.mClutPsm == GS_PSM_32) bpp = 32;
+            TextureBuffer clut(header.mClutWidth, header.mClutHeight, bpp, format, type);
+            resource.read((char*) clut.mData.data(), clut.mData.size());
             return CreateTexture(name, std::move(core), std::move(clut));
         } else {
             return CreateTexture(name, std::move(core));
         }
     }
 
-    Texture* CreateTexture(const uint32_t& name, TextureBuffer core)
+    Texture* CreateTexture(const name& name, TextureBuffer core)
     {
         auto texture = std::make_unique<Texture>(name, std::move(core));
         Texture* pointer = texture.get();
-        mTextures[name] = std::move(texture);
+        mTextures[name.mID] = std::move(texture);
         return pointer;
     }
 
-    Texture* CreateTexture(const uint32_t& name, TextureBuffer core, TextureBuffer clut)
+    Texture* CreateTexture(const name& name, TextureBuffer core, TextureBuffer clut)
     {
         auto texture = std::make_unique<Texture>(name, std::move(core), std::move(clut));
         Texture* pointer = texture.get();
-        mTextures[name] = std::move(texture);
+        mTextures[name.mID] = std::move(texture);
         return pointer;
     }
 

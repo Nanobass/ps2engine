@@ -5,11 +5,9 @@
 // ---------------------------------------------------
 // Open Source Game Engine for Playstation 2
 //
-// File:        ps2memory.hpp
+// File:        buffer.hpp
 //
-// Description: Heap Foundation Header
-//
-// Sub System:  Heap Foundation
+// Description: Float VertexBuffer
 //
 //=============================================================================
 
@@ -22,7 +20,6 @@
 /* standard library */
 #include <cstddef>
 #include <cstdint>
-#include <malloc.h>
 #include <string>
 #include <map>
 #include <vector>
@@ -31,56 +28,45 @@
 #include <stack>
 #include <memory>
 #include <iostream>
+#include <assert.h>
 
 //========================================
 // Project Includes
 //========================================
 
-uint32_t joaat(const std::string& str);
+#include <ps2math.hpp>
 
-struct name
+namespace Engine
 {
-    std::string mStringName;
-    uint32_t mID;
 
-    name(const std::string& name) 
-        : mStringName(name), mID(joaat(name))
-    {}
-
-    name(const char* name)
-        : mStringName(name), mID(joaat(mStringName))
-    {}
-
-};
-
-template <typename T>
-class buffer
+template <typename T = Math::Vec4>
+struct VertexBuffer
 {
     using type = T;
 
 public:
     
-    explicit buffer(std::size_t size)
+    explicit VertexBuffer(std::size_t size)
         :   mSize(size), 
-            mData(new T[size])
+            mData(new type[size])
         {}
     
-    ~buffer()
+    ~VertexBuffer()
     {
         if(mData) delete[] mData;
     }
 
     // no copying, no, ONLY EXPLICIT COPYING, WE DO NOT HAVE GIGABYTES OF SYSTEM MEMORY
-    explicit buffer(const buffer& other) = delete;
-    buffer& operator=(const buffer& other) = delete;
+    explicit VertexBuffer(const VertexBuffer& other) = delete;
+    VertexBuffer& operator=(const VertexBuffer& other) = delete;
 
     // moving is fine and kinda required without copying
-    buffer(buffer&& other) noexcept 
+    VertexBuffer(VertexBuffer&& other) noexcept 
         :   mSize(std::exchange(other.mSize, 0)), 
             mData(std::exchange(other.mData, nullptr))
     {}
 
-    buffer& operator=(buffer&& other) noexcept
+    VertexBuffer& operator=(VertexBuffer&& other) noexcept
     {
         if (this != &other)
         {
@@ -138,22 +124,24 @@ public:
         return mSize;
     }
 
-    T* data() const
+    type* data() const
     {
         return mData;
     }
 
-    T& operator[](std::size_t index)
+    type& operator[](std::size_t index)
     {
         return mData[index];
     }
 
-    const T& operator[](std::size_t index) const
+    const type& operator[](std::size_t index) const
     {
         return mData[index];
     }
 
 private:
     std::size_t mSize;
-    T* mData;
+    type* mData;
 };
+    
+} // namespace Engine

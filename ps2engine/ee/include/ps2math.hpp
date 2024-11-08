@@ -369,3 +369,9 @@ Color operator-(const Color& vector);
 std::ostream& operator<<(std::ostream& os, const Color& vector);
 
 }
+
+using color = Math::Color;
+using vec2 = Math::Vec2;
+using vec3 = Math::Vec3;
+using vec4 = Math::Vec4;
+using mat4 = Math::Mat4;

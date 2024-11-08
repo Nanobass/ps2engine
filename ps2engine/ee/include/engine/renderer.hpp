@@ -18,25 +18,9 @@
 //========================================
 
 /* standard library */
-#include <math.h>
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
-#include <utility>
 #include <memory>
-#include <string.h>
-#include <iostream>
-#include <algorithm>
-
-/* ps2sdk */
-#include <tamtypes.h>
-#include <kernel.h>
-#include <sifrpc.h>
-#include <loadfile.h>
-#include <stdio.h>
-#include <graph.h>
-#include <gs_psm.h>
-#include <osd_config.h>
 
 /* ps2gl */
 #include <GL/ps2gl.h>
@@ -51,7 +35,9 @@
 
 /* engine */
 #include <engine/texturemanager.hpp>
-#include <engine/textrenderer.hpp>
+#include <engine/camera.hpp>
+#include <engine/renderer/font.hpp>
+#include <engine/renderer/skybox.hpp>
 
 /* ps2memory */
 #include <ps2memory.hpp>
@@ -65,73 +51,31 @@
 namespace Engine
 {
 
-struct Camera {
-    Math::Mat4 mProjectionMatrix;
-    Math::Mat4 mViewMatrix;
-
-    virtual void Apply() 
+struct GeometryAllocator
+{
+    float* AllocateFloats(size_t size)
     {
-        glMatrixMode(GL_PROJECTION);
-        gluLoadMatrix(mProjectionMatrix);
-        glMatrixMode(GL_MODELVIEW);
-        gluLoadMatrix(mViewMatrix);
+        return new float[size];
     }
-};
 
-struct PerspectiveCamera : public Camera {
-    Math::Vec4 mPosition, mTarget, mUp = Math::Vec4(0.0F, 1.0F, 0.0F);
-
-    float mNearPlane, mFarPlane;
-    float mFieldOfView;
-    float mAspectRatio;
-
-    PerspectiveCamera(float fov, float near, float far, float aspect)
-        :   mNearPlane(near)
-        ,   mFarPlane(far)
-        ,   mFieldOfView(fov)
-        ,   mAspectRatio(aspect)
-    {}
-
-    void Apply() 
+    void FreeFloats(float* p)
     {
-        mProjectionMatrix = Math::Projection(mFieldOfView, 1.0F, 1.0F, 1.0F, mAspectRatio, mNearPlane, mFarPlane);
-        mViewMatrix = Math::LookAt(mPosition, mTarget, mUp);
-        Camera::Apply();
+        delete[] p;
     }
-};
 
-struct OrthographicCamera : public Camera {
-    Math::Vec4 mPosition;
-
-
-    float mScreenWidth, mScreenHeight;
-    float mWorldWidth, mWorldHeight;
-    float mAspectRatio;
-
-    OrthographicCamera(float width, float height, float aspect)
-        :   mWorldWidth(width)
-        ,   mWorldHeight(height)
-        ,   mAspectRatio(aspect)
-    {}
-
-    void Apply() 
-    {
-        mScreenWidth = mWorldWidth * mAspectRatio;
-        mScreenHeight = mWorldHeight;
-        Math::Vec4 scale = Math::Vec4(1.0F / mScreenWidth * 2.0F, 1.0F / mScreenHeight * 2.0F, 1.0F);
-        mProjectionMatrix = Math::Scale(scale);
-        mViewMatrix = Math::Mat4();
-        Camera::Apply();
-    }
 };
 
 struct MasterRenderer {
 
-    std::unique_ptr<TextureManager> mTextureManager;
+    bool mFirstFrame = true;
+
     int mWidth, mHeight;
     float mAspectRatio;
 
-    bool mFirstFrame = true;
+    std::unique_ptr<GeometryAllocator> mGeometryAllocator;
+    std::unique_ptr<TextureManager> mTextureManager;
+    std::unique_ptr<TextRenderer> mTextRenderer;
+    std::unique_ptr<SkyboxRenderer> mSkyboxRenderer;
 
     /**
      * initialize everything
@@ -139,13 +83,14 @@ struct MasterRenderer {
     MasterRenderer()
     {
         *(GIF::Registers::ctrl) = 1; // OSDSYS leaves path 3 busy, so fix that
-        pglInit(64 * 1024, 1000); // initialize ps2gl, small immediate buffers because we don't use immediate mode, nevermind buffers need to be biiiig
+        
+    	SetGsCrt(1 /* interlaced */, 2 /* ntsc */, 1 /* frame */);
+        
+        pglInit(64 * 1024, 1000);
 
         mWidth = 640;
-        mHeight = 512;
+        mHeight = 224;
         mAspectRatio = ps2::GetSystemAspectRatio();
-
-        graph_set_mode(GRAPH_MODE_INTERLACED, GRAPH_MODE_PAL, GRAPH_MODE_FIELD, GRAPH_ENABLE);
 
         pgl_slot_handle_t frame_slot_0 = pglAddGsMemSlot(  0, 80, GS_PSM_24);
         pgl_area_handle_t frame_area_0 = pglCreateGsMemArea(mWidth, mHeight, GS_PSM_24);
@@ -165,30 +110,27 @@ struct MasterRenderer {
         pglSetDrawBuffers(PGL_INTERLACED, frame_area_0, frame_area_1, depth_area);
         pglSetDisplayBuffers(PGL_INTERLACED, frame_area_0, frame_area_1);
 
+        mGeometryAllocator = std::make_unique<GeometryAllocator>();
         mTextureManager = std::make_unique<TextureManager>(240, 512);
 
         gluClearColor(Math::Color(0.1F, 0.1F, 0.1F));
         glClearDepth(1.0F);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-
-        glDisable(GL_CULL_FACE);
-
         glEnable(GL_RESCALE_NORMAL);
 
-        glEnable(GL_LIGHTING);
-        gluAmbientLight(Math::Color(1.0F, 1.0F, 1.0F));
-
-        glEnable(GL_TEXTURE_2D);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
+        mTextRenderer = std::make_unique<TextRenderer>(mTextureManager.get());
+        mSkyboxRenderer = std::make_unique<SkyboxRenderer>(mTextureManager.get());
     }  
 
     ~MasterRenderer()
     {
-        // delete the texture manager first
+        mTextRenderer.reset();
+        mSkyboxRenderer.reset();
         mTextureManager.reset();
+        mGeometryAllocator.reset();
         
         pglFinish();
     }
@@ -196,7 +138,8 @@ struct MasterRenderer {
     void BeginFrame() 
     {
         pglBeginGeometry();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
     } 
 
     void EndFrame()

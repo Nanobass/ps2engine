@@ -5,9 +5,9 @@
 // ---------------------------------------------------
 // Open Source Game Engine for Playstation 2
 //
-// File:        level.hpp
+// File:        obj.hpp
 //
-// Description: Level halt ne
+// Description: OBJ parser
 //
 //=============================================================================
 
@@ -20,16 +20,3 @@
 //========================================
 // Project Includes
 //========================================
-
-#include <ps2math.hpp>
-#include <ps2memory.hpp>
-
-namespace Engine
-{
-
-struct Level
-{
-
-};
-    
-} // namespace Engine

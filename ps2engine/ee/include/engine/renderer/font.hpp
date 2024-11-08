@@ -5,7 +5,7 @@
 // ---------------------------------------------------
 // Open Source Game Engine for Playstation 2
 //
-// File:        textrenderer.hpp
+// File:        font.hpp
 //
 // Description: Text Renderer
 //
@@ -88,7 +88,7 @@ struct TextRenderer {
         for(auto& e : mFonts)
         {
             Font* font = e.second.get();
-            mTextureManager->DeleteTexture(font->mFontTexture->mName);
+            mTextureManager->DeleteTexture(font->mFontTexture->mName.mID);
         }
         mFonts.clear();
     }
@@ -100,10 +100,8 @@ struct TextRenderer {
 
     Font* LoadFont(uint32_t name, const std::string& fnt, const std::string& img, float size, float lineHeight)
     {
-        std::ifstream file(fnt);
-
         std::unique_ptr<Font> font = std::make_unique<Font>();
-        font->mFontTexture = mTextureManager->LoadGsTexture(joaat(img), img);
+        font->mFontTexture = mTextureManager->LoadGsTexture(img, img);
         font->mSize = size;
         font->mLineHeight = lineHeight / size;
 
@@ -115,6 +113,8 @@ struct TextRenderer {
 
         float texWidth = font->mFontTexture->GetWidth();
         float texHeight = font->mFontTexture->GetHeight();
+
+        std::ifstream file(fnt);
 
         std::string line;
         std::getline(file, line); // info...
@@ -184,23 +184,29 @@ struct TextRenderer {
     {
         auto it = mFonts.find(name);
         Font* font = it->second.get();
-        mTextureManager->DeleteTexture(font->mFontTexture->mName);
+        mTextureManager->DeleteTexture(font->mFontTexture->mName.mID);
         mFonts.erase(it);
     }
 
-    void DrawString(Font* font, std::string string, Math::Color color = Math::Color())
+    void DrawString(Font* font, std::string string)
     {
         float x = 0.0F, y = 0.0F;
 
-        glEnable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_LIGHTING);
 
-        glBindTexture(GL_TEXTURE_2D, font->mFontTexture->mGLName);
+        font->mFontTexture->Bind();
+        
         glBegin(GL_QUADS);
         for(auto chr : string)
         {
             Glyph glyph = font->mGlyphs[chr];
+
+            if(chr == '\n')
+            {
+                y -= 1.0F;
+                x = 0.0F;
+            }
             
             float x1 = x + glyph.mXOffset;
             float y1 = y + glyph.mYOffset + glyph.mHeight;
