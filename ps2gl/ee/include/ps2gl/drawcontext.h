@@ -11,7 +11,7 @@
  * includes
  */
 
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 
 #include "ps2gl/glcontext.h"
 #include "ps2gl/immgmanager.h"
@@ -92,8 +92,8 @@ public:
     int DepthBits;
 
     // current vertex xform
-    cpu_mat_44 VertexXform;
-    cpu_mat_44 GSScale;
+    pse::math::mat4 VertexXform;
+    pse::math::mat4 GSScale;
     bool IsVertexXformValid;
 
     int Width, Height;
@@ -107,7 +107,7 @@ public:
 
     inline CClearEnv& GetClearEnv() { return *ClearEnv; }
 
-    const cpu_mat_44& GetVertexXform();
+    const pse::math::mat4& GetVertexXform();
     inline void SetVertexXformValid(bool valid)
     {
         IsVertexXformValid = valid;

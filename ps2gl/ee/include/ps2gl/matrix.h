@@ -8,7 +8,7 @@
 #define ps2gl_matrix_h
 
 #include "ps2gl/debug.h"
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 
 #include "ps2gl/drawcontext.h"
 #include "ps2gl/glcontext.h"
@@ -23,7 +23,7 @@ class CMatrixStack {
 protected:
     CGLContext& GLContext;
     static const int MaxStackDepth = 16;
-    cpu_mat_44 Matrices[MaxStackDepth], InverseMatrices[MaxStackDepth];
+    pse::math::mat4 Matrices[MaxStackDepth], InverseMatrices[MaxStackDepth];
     int CurStackDepth;
 
 public:
@@ -40,8 +40,8 @@ public:
 
     virtual void Pop()  = 0;
     virtual void Push() = 0;
-    virtual void Concat(const cpu_mat_44& xform, const cpu_mat_44& inverse) = 0;
-    virtual void SetTop(const cpu_mat_44& newMat, const cpu_mat_44& newInv) = 0;
+    virtual void Concat(const pse::math::mat4& xform, const pse::math::mat4& inverse) = 0;
+    virtual void SetTop(const pse::math::mat4& newMat, const pse::math::mat4& newInv) = 0;
 };
 
 /********************************************
@@ -71,24 +71,24 @@ public:
         ++CurStackDepth;
     }
 
-    void Concat(const cpu_mat_44& xform, const cpu_mat_44& inverse)
+    void Concat(const pse::math::mat4& xform, const pse::math::mat4& inverse)
     {
-        cpu_mat_44& curMat = Matrices[CurStackDepth];
-        cpu_mat_44& curInv = InverseMatrices[CurStackDepth];
+        pse::math::mat4& curMat = Matrices[CurStackDepth];
+        pse::math::mat4& curInv = InverseMatrices[CurStackDepth];
         curMat             = curMat * xform;
         curInv             = inverse * curInv;
         GLContext.GetImmDrawContext().SetVertexXformValid(false);
     }
 
-    void SetTop(const cpu_mat_44& newMat, const cpu_mat_44& newInv)
+    void SetTop(const pse::math::mat4& newMat, const pse::math::mat4& newInv)
     {
         Matrices[CurStackDepth]        = newMat;
         InverseMatrices[CurStackDepth] = newInv;
         GLContext.GetImmDrawContext().SetVertexXformValid(false);
     }
 
-    const cpu_mat_44& GetTop() const { return Matrices[CurStackDepth]; }
-    const cpu_mat_44& GetInvTop() const { return InverseMatrices[CurStackDepth]; }
+    const pse::math::mat4& GetTop() const { return Matrices[CurStackDepth]; }
+    const pse::math::mat4& GetInvTop() const { return InverseMatrices[CurStackDepth]; }
 };
 
 /********************************************
@@ -104,8 +104,8 @@ public:
 
     void Pop();
     void Push();
-    void Concat(const cpu_mat_44& xform, const cpu_mat_44& inverse);
-    void SetTop(const cpu_mat_44& newMat, const cpu_mat_44& newInv);
+    void Concat(const pse::math::mat4& xform, const pse::math::mat4& inverse);
+    void SetTop(const pse::math::mat4& newMat, const pse::math::mat4& newInv);
 };
 
 #endif // ps2gl_matrix_h

@@ -89,8 +89,8 @@ int main(int argc, char const *argv[])
 
     pse::PerspectiveCamera camera(40.0F, 1.0F, 100.0F, g_RenderManager->mAspectRatio);
     pse::math::vec4 cameraRotation(0, 0, 0);
-    camera.mPosition = pse::math::vec3(0, 0, 5);
-    camera.mTarget = pse::math::vec3(0, 0, 0);
+    camera.mPosition = pse::math::vec4(0, 0, 5);
+    camera.mTarget = pse::math::vec4(0, 0, 0);
 
     std::string metrics = "";
     int frameCounter = 0;
@@ -102,11 +102,11 @@ int main(int argc, char const *argv[])
 
     CTerrain* terrain = new CTerrain();
 
-    for(int i = 0; i < 4; i++)
+    for(int i = 0; i < 1; i++)
     {
-        for(int j = 0; j < 2; j++)
+        for(int j = 0; j < 1; j++)
         {
-            for(int k = 0; k < 4; k++)
+            for(int k = 0; k < 1; k++)
             {
                 makeChunk(terrain, i, j, k);
             }
@@ -152,7 +152,7 @@ int main(int argc, char const *argv[])
         g_RenderManager->BeginFrame();
         g_SkyboxRenderer->RenderSky(camera);
         g_RenderManager->mLightingManager->DoLighting(camera);
-        
+
         camera.Apply();
         for(auto& chunk : terrain->chunks())
         {

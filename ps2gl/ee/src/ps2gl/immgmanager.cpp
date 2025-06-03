@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 #include "ps2s/displayenv.h"
 #include "ps2s/math.h"
 #include "ps2s/packet.h"
@@ -108,9 +108,9 @@ void CImmGeomManager::BeginGeom(GLenum mode)
     InsideBeginEnd = true;
 }
 
-void CImmGeomManager::Vertex(cpu_vec_xyzw newVert)
+void CImmGeomManager::Vertex(pse::math::vec4 newVert)
 {
-    cpu_vec_xyz normal = GetCurNormal();
+    pse::math::vec3 normal = GetCurNormal();
     *CurNormalBuf += normal;
 
     const float* texCoord = GetCurTexCoord();
@@ -124,14 +124,14 @@ void CImmGeomManager::Vertex(cpu_vec_xyzw newVert)
     Geometry.AddTexCoords();
 }
 
-void CImmGeomManager::Normal(cpu_vec_xyz normal)
+void CImmGeomManager::Normal(pse::math::vec3 normal)
 {
     if (DoNormalize)
         normal.normalize();
     CurNormal = normal;
 }
 
-void CImmGeomManager::Color(cpu_vec_xyzw color)
+void CImmGeomManager::Color(pse::math::vec4 color)
 {
     if (InsideBeginEnd) {
         *CurColorBuf += color;

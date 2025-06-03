@@ -1,6 +1,6 @@
 EE_LIB=libps2gl.a
 
-EE_INCS= -Ivu1
+EE_INCS=-Ivu1 -I$(PS2LUA_SRC)/core/ee/include
 
 RENDERERS = \
 	fast_nolights \
@@ -19,14 +19,12 @@ RENDERERS = \
 	
 EE_EXTRA_OBJECTS = $(addsuffix .o, $(addprefix $(EE_OBJ)/, $(RENDERERS)))
 
+EE_CFLAGS+=-D_DEBUG
+EE_CXXFLAGS+=-D_DEBUG
+
+EE_WARNFLAGS+=-Wno-strict-aliasing
+
 #VSM_SOURCES = $(addsuffix _vcl.vsm, $(addprefix vu1/, $(RENDERERS)))
-
-# Disabling warnings
-WARNING_FLAGS = -Wno-strict-aliasing -Wno-conversion-null 
-
-# VU0 code is broken so disable for now
-EE_CFLAGS   += $(WARNING_FLAGS) -DNO_VU0_VECTORS -DNO_ASM
-EE_CXXFLAGS += $(WARNING_FLAGS) -DNO_VU0_VECTORS -DNO_ASM
 
 all: $(EE_LIB)
 clean: 

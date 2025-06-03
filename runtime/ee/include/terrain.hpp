@@ -101,7 +101,7 @@ public:
     static const int cLayerCount = cChunkSize * cChunkSize;
 
     CTerrainChunk(CTerrain* terrain, CIPosition position)
-      : mVoxels({0})
+      : mVoxels{0}
       , mTerrain(terrain)    
       , mPosition(position)
       , mMesh({0, false})
@@ -204,7 +204,7 @@ private:
 
 inline void makeChunk(CTerrain* terrain, int x, int y, int z)
 {
-    CTerrainChunk* chunk = terrain->addChunk(CIPosition(x, y, z));
+    CTerrainChunk* chunk = terrain->addChunk({x, y, z});
     if(!chunk) return;
     for(int i = 0; i < CTerrainChunk::cChunkSize; i++)
     {
@@ -213,9 +213,9 @@ inline void makeChunk(CTerrain* terrain, int x, int y, int z)
             for(int k = 0; k < CTerrainChunk::cChunkSize; k++)
             {
                 chunk->get({i, j, k})->mIntensity = PerlinNoise::GetValue(
-                    (x * CTerrainChunk::cChunkSize + i) / 16.0F,
-                    (y * CTerrainChunk::cChunkSize + j) / 16.0F,
-                    (z * CTerrainChunk::cChunkSize + k) / 16.0F
+                    (x * CTerrainChunk::cChunkSize + i) * 0.0201f,
+                    (y * CTerrainChunk::cChunkSize + j) * 0.0201f,
+                    (z * CTerrainChunk::cChunkSize + k) * 0.0201f
                 ) * 255;
             }
         }

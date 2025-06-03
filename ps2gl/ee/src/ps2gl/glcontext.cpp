@@ -88,8 +88,8 @@ CGLContext::CGLContext(int immBufferQwordSize, int immDrawBufferQwordSize)
     CurLighting   = ImmLighting;
     // defaults
     CLight& light = ImmLighting->GetLight(0);
-    light.SetDiffuse(cpu_vec_xyzw(1.0f, 1.0f, 1.0f, 1.0f));
-    light.SetSpecular(cpu_vec_xyzw(1.0f, 1.0f, 1.0f, 1.0f));
+    light.SetDiffuse(pse::math::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    light.SetSpecular(pse::math::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     MaterialManager = new CMaterialManager(*this);
     DListManager    = new CDListManager;

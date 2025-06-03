@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 #include "ps2s/math.h"
 
 #include "ps2gl/glcontext.h"
@@ -53,16 +53,16 @@ void CIndexedRenderer::InitContext(GLenum primType, uint32_t rcChanges, bool use
     bool doLighting        = lighting.GetLightingEnabled();
 
     float maxColorValue = GetMaxColorValue(XferTexCoords);
-    cpu_vec_4 globalAmb;
+    pse::math::vec4 globalAmb;
     if (doLighting)
         globalAmb = lighting.GetGlobalAmbient() * maxColorValue;
     else
         globalAmb.set(0, 0, 0, 0);
 
     CImmMaterial& material = glContext.GetMaterialManager().GetImmMaterial();
-    cpu_vec_4 materialAmb  = material.GetAmbient();
+    pse::math::vec4 materialAmb  = material.GetAmbient();
 
-    cpu_vec_4 materialEmm;
+    pse::math::vec4 materialEmm;
     if (doLighting)
         materialEmm = material.GetEmission() * maxColorValue;
     else

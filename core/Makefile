@@ -1,6 +1,6 @@
 EE_LIB=libcore.a
 
-EE_CXXFLAGS+=-Wno-deprecated
+EE_WARNFLAGS += -Werror
 
 all: $(EE_LIB)
 clean: 

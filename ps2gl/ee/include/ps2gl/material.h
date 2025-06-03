@@ -9,7 +9,7 @@
 
 #include "GL/gl.h"
 
-#include "ps2s/cpu_vector.h"
+#include <ps2math.hpp>
 
 #include "ps2gl/debug.h"
 #include "ps2gl/dlgmanager.h"
@@ -28,15 +28,15 @@ public:
     {
     }
 
-    virtual void SetAmbient(cpu_vec_xyzw ambient)   = 0;
-    virtual void SetDiffuse(cpu_vec_xyzw diffuse)   = 0;
-    virtual void SetSpecular(cpu_vec_xyzw specular) = 0;
-    virtual void SetEmission(cpu_vec_xyzw emission) = 0;
+    virtual void SetAmbient(pse::math::vec4 ambient)   = 0;
+    virtual void SetDiffuse(pse::math::vec4 diffuse)   = 0;
+    virtual void SetSpecular(pse::math::vec4 specular) = 0;
+    virtual void SetEmission(pse::math::vec4 emission) = 0;
     virtual void SetShininess(float shine)          = 0;
 };
 
 class CImmMaterial : public CMaterial {
-    cpu_vec_xyzw Ambient, Diffuse, Specular, Emission;
+    pse::math::vec4 Ambient, Diffuse, Specular, Emission;
     float Shininess;
 
     inline void TellRendererMaterialChanged()
@@ -47,18 +47,18 @@ class CImmMaterial : public CMaterial {
 public:
     CImmMaterial(CGLContext& context);
 
-    void SetAmbient(cpu_vec_xyzw ambient)
+    void SetAmbient(pse::math::vec4 ambient)
     {
         Ambient = ambient;
         TellRendererMaterialChanged();
     }
-    void SetDiffuse(cpu_vec_xyzw diffuse)
+    void SetDiffuse(pse::math::vec4 diffuse)
     {
         Diffuse = diffuse;
         TellRendererMaterialChanged();
     }
-    void SetSpecular(cpu_vec_xyzw specular);
-    void SetEmission(cpu_vec_xyzw emission)
+    void SetSpecular(pse::math::vec4 specular);
+    void SetEmission(pse::math::vec4 emission)
     {
         Emission = emission;
         TellRendererMaterialChanged();
@@ -69,10 +69,10 @@ public:
         TellRendererMaterialChanged();
     }
 
-    inline cpu_vec_xyzw GetAmbient() const { return Ambient; }
-    inline cpu_vec_xyzw GetDiffuse() const { return Diffuse; }
-    inline cpu_vec_xyzw GetSpecular() const { return Specular; }
-    inline cpu_vec_xyzw GetEmission() const { return Emission; }
+    inline pse::math::vec4 GetAmbient() const { return Ambient; }
+    inline pse::math::vec4 GetDiffuse() const { return Diffuse; }
+    inline pse::math::vec4 GetSpecular() const { return Specular; }
+    inline pse::math::vec4 GetEmission() const { return Emission; }
     inline float GetShininess() const { return Shininess; }
 
     void LightsHaveSpecular();
@@ -90,10 +90,10 @@ public:
     {
     }
 
-    void SetAmbient(cpu_vec_xyzw ambient);
-    void SetDiffuse(cpu_vec_xyzw diffuse);
-    void SetSpecular(cpu_vec_xyzw specular);
-    void SetEmission(cpu_vec_xyzw emission);
+    void SetAmbient(pse::math::vec4 ambient);
+    void SetDiffuse(pse::math::vec4 diffuse);
+    void SetSpecular(pse::math::vec4 specular);
+    void SetEmission(pse::math::vec4 emission);
     void SetShininess(float shine);
 };
 
@@ -104,7 +104,7 @@ class CMaterialManager {
     CDListMaterial DListMaterial;
     CMaterial* CurMaterial;
 
-    cpu_vec_xyzw CurColor;
+    pse::math::vec4 CurColor;
     GLenum ColorMaterialMode;
     bool UseColorMaterial;
     bool InDListDef;
@@ -120,17 +120,17 @@ public:
         , UseColorMaterial(false)
         , InDListDef(false)
     {
-        ImmMaterial.SetDiffuse(cpu_vec_xyzw(0.8f, 0.8f, 0.8f, 1.0f));
+        ImmMaterial.SetDiffuse(pse::math::vec4(0.8f, 0.8f, 0.8f, 1.0f));
     }
 
     CMaterial& GetCurMaterial() { return *CurMaterial; }
     CImmMaterial& GetImmMaterial() { return ImmMaterial; }
     CDListMaterial& GetDListMaterial() { return DListMaterial; }
-    cpu_vec_xyzw GetCurColor() const { return CurColor; }
+    pse::math::vec4 GetCurColor() const { return CurColor; }
     GLenum GetColorMaterialMode() const { return ColorMaterialMode; }
     bool GetColorMaterialEnabled() const { return UseColorMaterial; }
 
-    void Color(cpu_vec_xyzw color);
+    void Color(pse::math::vec4 color);
     void SetUseColorMaterial(bool yesNo);
     void SetColorMaterialMode(GLenum mode);
 

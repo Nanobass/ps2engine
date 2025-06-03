@@ -1,12 +1,12 @@
 #include <ps2math.hpp>
 #include <math3d.h>
 
-extern volatile const u32 MATH3DX_ATAN_TABLE[9] alignas(sizeof(float)) = {
+extern volatile const u32 PS2MATH_ATAN_TABLE[9] alignas(sizeof(float)) = {
     0x3f7ffff5, 0xbeaaa61c, 0x3e4c40a6, 0xbe0e6c63, 0x3dc577df,
     0xbd6501c4, 0x3cb31652, 0xbb84d7e7, 0x3f490fdb,
 };
 
-extern volatile const float MATH3DX_ATAN_TABLE2[8] = {
+extern volatile const float PS2MATH_ATAN_TABLE2[8] = {
     0.0f,
     (pse::math::PI / 2.0f),
     (pse::math::PI / 2.0f),
@@ -22,6 +22,8 @@ namespace pse::math {
 //
 // Math Functions
 //
+
+float sin(const float& x) { return pse::math::cos(x - HALF_PI); }
 
 float cos(float x) 
 {
@@ -83,7 +85,7 @@ float cos(float x)
     return r;
 }
 
-float isqrt(const float& x) { return 1.0F / sqrt(x); }
+float tan(const float& x) { return pse::math::sin(x) / pse::math::cos(x); }
 
 float atan2(float y, float x) 
 {
@@ -129,7 +131,7 @@ float atan2(float y, float x)
         "_atan_04:    \n\t"
         "mfc1		$6, %1    \n\t"
         "mfc1		$7, %2    \n\t"
-        "la			$8, MATH3DX_ATAN_TABLE    \n\t"
+        "la			$8, PS2MATH_ATAN_TABLE    \n\t"
         "lqc2		$vf4, 0x0($8)    \n\t"
         "lqc2		$vf5, 0x10($8)    \n\t"
         "lqc2		$vf6, 0x20($8)    \n\t"
@@ -161,7 +163,7 @@ float atan2(float y, float x)
         "mtc1		$6, %0    \n\t"
         "andi		$8, $9, 1    \n\t"
         "sll			$9, $9, 2    \n\t"
-        "la			$7, MATH3DX_ATAN_TABLE2    \n\t"
+        "la			$7, PS2MATH_ATAN_TABLE2    \n\t"
         "add			$9, $9, $7    \n\t"
         "lw			$7, 0x0($9)    \n\t"
         "mtc1		$7, %1    \n\t"
@@ -176,19 +178,6 @@ float atan2(float y, float x)
         : "$6", "$7", "$8", "$9", "$f0", "$f1", "$f2"
     );
     return r;
-}
-
-float randomf(const float& min, const float& max) 
-{
-  float random = ((float)rand()) / (float)RAND_MAX;
-  float diff = max - min;
-  float r = random * diff;
-  return min + r;
-}
-
-int randomi(const int& min, const int& max) 
-{
-  return rand() % (max - min + 1) + min;
 }
 
 float asin(float x) 
@@ -251,34 +240,6 @@ float asin(float x)
     return r;
 }
 
-bool equalf(const float& a, const float& b, const float& epsilon) 
-{
-  return fabs(a - b) < epsilon;
-}
-
-float mod(const float& x, const float& y) 
-{
-  /*
-   * Portable fmod(x,y) implementation for systems
-   * that don't have it. Adapted from code found here:
-   * http://www.opensource.apple.com/source/mPlanes[pY].thon/mPlanes[pY].thon-3/mPlanes[pY].thon/Python/fmod.c
-   */
-  float i, f;
-
-  if (fabs(y) < 0.00001F) {
-    return 0.0F;
-  }
-
-  i = floorf(x / y);
-  f = x - i * y;
-
-  if ((x < 0.0f) != (y < 0.0f)) {
-    f = f - y;
-  }
-
-  return f;
-}
-
 float acos(const float& x) 
 {
   float y = sqrt(1.0f - x * x);
@@ -286,370 +247,65 @@ float acos(const float& x)
   return t;
 }
 
-float sin(const float& x) { return pse::math::cos(x - HALF_PI); }
-
-float tan(const float& x) { return pse::math::sin(x) / pse::math::cos(x); }
-
-//
-//  Matrix Math
-//
-
-mat4::mat4()
-{
-    identity(*this);
-}
-
-mat4::mat4(const mat4& matrix)
-{
-    matrix_copy(this->matrix, (float*)matrix.matrix);
-}
-
-void mat4::operator=(const mat4& matrix)
-{
-    matrix_copy(this->matrix, (float*)matrix.matrix);
-}
-
-mat4 operator*(const mat4& lhs, const mat4& rhs)
-{
-    mat4 output;
-    asm volatile(
-        "lqc2         $vf1, 0x00(%1) \n\t"
-        "lqc2         $vf2, 0x10(%1) \n\t"
-        "lqc2         $vf3, 0x20(%1) \n\t"
-        "lqc2         $vf4, 0x30(%1) \n\t"
-        "lqc2         $vf5, 0x00(%2) \n\t"
-        "lqc2         $vf6, 0x10(%2) \n\t"
-        "lqc2         $vf7, 0x20(%2) \n\t"
-        "lqc2         $vf8, 0x30(%2) \n\t"
-        "vmulax.xyzw  $ACC, $vf5, $vf1 \n\t"
-        "vmadday.xyzw $ACC, $vf6, $vf1 \n\t"
-        "vmaddaz.xyzw $ACC, $vf7, $vf1 \n\t"
-        "vmaddw.xyzw  $vf1, $vf8, $vf1 \n\t"
-        "vmulax.xyzw  $ACC, $vf5, $vf2 \n\t"
-        "vmadday.xyzw $ACC, $vf6, $vf2 \n\t"
-        "vmaddaz.xyzw $ACC, $vf7, $vf2 \n\t"
-        "vmaddw.xyzw  $vf2, $vf8, $vf2 \n\t"
-        "vmulax.xyzw  $ACC, $vf5, $vf3 \n\t"
-        "vmadday.xyzw $ACC, $vf6, $vf3 \n\t"
-        "vmaddaz.xyzw $ACC, $vf7, $vf3 \n\t"
-        "vmaddw.xyzw  $vf3, $vf8, $vf3 \n\t"
-        "vmulax.xyzw  $ACC, $vf5, $vf4 \n\t"
-        "vmadday.xyzw $ACC, $vf6, $vf4 \n\t"
-        "vmaddaz.xyzw $ACC, $vf7, $vf4 \n\t"
-        "vmaddw.xyzw  $vf4, $vf8, $vf4 \n\t"
-        "sqc2         $vf1, 0x00(%0) \n\t"
-        "sqc2         $vf2, 0x10(%0) \n\t"
-        "sqc2         $vf3, 0x20(%0) \n\t"
-        "sqc2         $vf4, 0x30(%0) \n\t"
-        :
-        : "r"(output.matrix), "r"(rhs.matrix), "r"(lhs.matrix)
-        : "memory"
-    );
-    return output;
-}
-
-vec4 operator*(const mat4& matrix, const vec4& vector)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2		$vf1, 0x00(%2)	\n"
-        "lqc2		$vf2, 0x10(%2)	\n"
-        "lqc2		$vf3, 0x20(%2)	\n"
-        "lqc2		$vf4, 0x30(%2)	\n"
-        "lqc2		$vf5, 0x00(%1)	\n"
-        "vmulaw	$ACC, $vf4, $vf0\n"
-        "vmaddax	$ACC, $vf1, $vf5\n"
-        "vmadday	$ACC, $vf2, $vf5\n"
-        "vmaddz	$vf6, $vf3, $vf5\n"
-        "sqc2		$vf6, 0x00(%0)	\n"
-        :
-        : "r"(output.vector), "r"(vector.vector), "r"(matrix.matrix)
-    );
-    return output;
-}
-
-vec4 operator*(const vec4& vector, const mat4& matrix)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2		$vf1, 0x00(%2)	\n"
-        "lqc2		$vf2, 0x10(%2)	\n"
-        "lqc2		$vf3, 0x20(%2)	\n"
-        "lqc2		$vf4, 0x30(%2)	\n"
-        "lqc2		$vf5, 0x00(%1)	\n"
-        "vmulaw	$ACC, $vf4, $vf0\n"
-        "vmaddax	$ACC, $vf1, $vf5\n"
-        "vmadday	$ACC, $vf2, $vf5\n"
-        "vmaddz	$vf6, $vf3, $vf5\n"
-        "sqc2		$vf6, 0x00(%0)	\n"
-        :
-        : "r"(output.vector), "r"(vector.vector), "r"(matrix.matrix)
-    );
-    return output;
-}
-
-std::ostream& operator<<(std::ostream& os, const mat4& matrix)
-{
-    for (int i = 0; i < 4; ++i) 
-        for (int j = 0; j < 4; ++j) 
-        {
-            os << "m" << i << j << "=" << matrix.m[i][j];
-            if(j < 4 || i < 3) os << " ";
-        }
-    return os;
-}
-
-void identity(const mat4& matrix)
-{
-    asm volatile(
-        "vsub.xyzw  $vf4, $vf0, $vf0 \n\t"
-        "vadd.w     $vf4, $vf4, $vf0 \n\t"
-        "vmr32.xyzw $vf5, $vf4       \n\t"
-        "vmr32.xyzw $vf6, $vf5       \n\t"
-        "vmr32.xyzw $vf7, $vf6       \n\t"
-        "sqc2       $vf4, 0x30(%0)   \n\t"
-        "sqc2       $vf5, 0x20(%0)   \n\t"
-        "sqc2       $vf6, 0x10(%0)   \n\t"
-        "sqc2       $vf7, 0x0(%0)    \n\t"
-        :
-        : "r"(matrix.matrix)
-    );
-}
-
-mat4 transpose(const mat4& matrix)
-{
-    mat4 output;
-    matrix_transpose(output.matrix, (float*) matrix.matrix);
-    return output;
-}
-
-mat4 translation(const vec4& positon)
-{
-    mat4 output = mat4();
-    output.matrix[12] = positon.x;
-    output.matrix[13] = positon.y;
-    output.matrix[14] = positon.z;
-    output.matrix[15] = positon.w;
-    return output;
-}
-
-mat4 rotationX(const float& r)
-{
-    mat4 output = mat4();
-    float c = cos(r);
-    float s = sin(r);
-    output.matrix[5] = c;   
-    output.matrix[6] = s;   
-    output.matrix[9] = -s;  
-    output.matrix[10] = c;  
-    return output;
-}
-
-mat4 rotationY(const float& r)
-{
-    mat4 output = mat4();
-    float c = cos(r);
-    float s = sin(r);
-    output.matrix[0] = c;  
-    output.matrix[2] = -s; 
-    output.matrix[8] = s;  
-    output.matrix[10] = c; 
-    return output;
-}
-
-mat4 rotationZ(const float& r)
-{
-    mat4 output = mat4();
-    float c = cos(r);
-    float s = sin(r);
-    output.matrix[0] = c;  
-    output.matrix[1] = s;  
-    output.matrix[4] = -s; 
-    output.matrix[5] = c;  
-    return output;
-}
-
-mat4 rotation(const vec4& rotation)
-{
-    return rotationZ(rotation.z) * rotationY(rotation.y) * rotationX(rotation.x);
-}
-
-mat4 scale(const vec4& scale)
-{
-    mat4 output = mat4();
-    output.matrix[0] = scale.x;
-    output.matrix[5] = scale.y;
-    output.matrix[10] = scale.z;
-    output.matrix[15] = scale.w;
-    return output;
-}
-
-mat4 transformation(const vec4& position, const vec4& rotation, const vec4& scale)
-{
-    return pse::math::scale(scale) * pse::math::rotation(rotation) * pse::math::translation(position);
-}
-
-mat4 lookAt(const vec4& position, const vec4& lookAt, const vec4& up)
-{
-    mat4 output;
-    vec4 viewvec, upvec;
-    asm volatile(
-        // eye
-        "lqc2          $vf4, 0x00(%2)      \n\t"
-        // obj
-        "lqc2		    $vf5, 0x00(%3)      \n\t"
-        // view_vec = $vf7
-        "vsub.xyz	    $vf7, $vf4, $vf5    \n\t"
-        "vmove.xyzw   $vf6, $vf0          \n\t"
-        // $vf6 = { 0.0f, 1.0f, 0.0f, 1.0f }
-        "vaddw.y		$vf6, $vf0, $vf0    \n\t"
-        "vopmula.xyz	$ACC, $vf6, $vf7    \n\t"
-        // vec = $vf9
-        "vopmsub.xyz	$vf9, $vf7, $vf6    \n\t"
-        "vopmula.xyz	$ACC, $vf7, $vf9    \n\t"
-        // up_vec = $vf8
-        "vopmsub.xyz	$vf8, $vf9, $vf7    \n\t"
-        // view_vec
-        "sqc2		    $vf7, 0x00(%0)      \n\t"
-        // up_vec
-        "sqc2		    $vf6, 0x00(%1)      \n\t"
-        :
-        : "r"(viewvec.vector), "r"(upvec.vector), "r"(position.vector), "r"(lookAt.vector)
-    );
-
-    asm volatile(
-        "lqc2         $vf9, 0x00(%2)          \n\t"
-        // mtmp.unit()
-        "lqc2		    $vf10, 0x00(%3)         \n\t"
-        // mtmp[1][PW] = 0.0F
-        "vsub.w       $vf5, $vf0, $vf0        \n\t"
-        // vtmp.outerProduct(vy, vz);
-        "vopmula.xyz  $ACC, $vf10, $vf9       \n\t"
-        "vopmsub.xyz	$vf11, $vf9, $vf10      \n\t"
-        // mtmp[0] = vtmp.normalize();
-        "vmul.xyz	    $vf12, $vf11, $vf11     \n\t"
-        "vaddy.x		$vf12, $vf12, $vf12     \n\t"
-        "vaddz.x		$vf12, $vf12, $vf12     \n\t"
-        "vrsqrt       $Q, $vf0w, $vf12x       \n\t"
-        "vsub.xyzw    $vf4, $vf0, $vf0        \n\t"
-        "vwaitq                               \n\t"
-        "vmulq.xyz    $vf4, $vf11, $Q         \n\t"
-        // mtmp[2] = vz.normalize();
-        "vmul.xyz     $vf12, $vf9, $vf9       \n\t"
-        "vaddy.x		$vf12, $vf12, $vf12     \n\t"
-        "vaddz.x		$vf12, $vf12, $vf12     \n\t"
-        "vrsqrt       $Q, $vf0w, $vf12x       \n\t"
-        "vsub.xyzw    $vf6, $vf0, $vf0        \n\t"
-        "vwaitq                               \n\t"
-        "vmulq.xyz    $vf6, $vf9, $Q          \n\t"
-        // mtmp[1].outerProduct(mtmp[2], mtmp[0]);
-        "vopmula.xyz	$ACC, $vf6, $vf4        \n\t"
-        "vopmsub.xyz	$vf5, $vf4, $vf6        \n\t"
-        // mtmp.transpose(pos);
-        "lqc2		    $vf7, 0x00(%1)          \n\t"
-        // m = mtmp.inverse();
-        "qmfc2.ni		$11, $vf0               \n\t"
-        "qmfc2.ni		$8, $vf4                \n\t"
-        "qmfc2.ni		$9, $vf5                \n\t"
-        "qmfc2.ni		$10, $vf6               \n\t"
-
-        "pextlw		$12, $9, $8             \n\t"
-        "pextuw		$13, $9, $8             \n\t"
-        "pextlw		$14, $11, $10           \n\t"
-        "pextuw		$15, $11, $10           \n\t"
-        "pcpyld		$8, $14, $12            \n\t"
-        "pcpyud		$9, $12, $14            \n\t"
-        "pcpyld		$10, $15, $13           \n\t"
-
-        "qmtc2.ni		$8, $vf16               \n\t"
-        "qmtc2.ni		$9, $vf17               \n\t"
-        "qmtc2.ni		$10, $vf18              \n\t"
-        "vmulax.xyz	$ACC, $vf16, $vf7       \n\t"
-        "vmadday.xyz	$ACC, $vf17, $vf7       \n\t"
-        "vmaddz.xyz	$vf5, $vf18, $vf7       \n\t"
-        "vsub.xyzw	$vf5, $vf0, $vf5        \n\t"
-
-        "sq			$8, 0x00(%0)            \n\t"
-        "sq			$9, 0x10(%0)            \n\t"
-        "sq			$10, 0x20(%0)           \n\t"
-        "sqc2			$vf5, 0x30(%0)          \n\t"
-        :
-        : "r"(output.matrix), "r"(position.vector), "r"(viewvec.vector), "r"(upvec.vector)
-    );
-    return output;
-}
-
-mat4 projection(const float& fov, const float& width, const float& height, const float& scale, const float& ratio, const float& near, const float& far)
-{
-    float fovYdiv2 = HALF_ANG2RAD * fov;
-    float cotFOV = 1.0F / (pse::math::sin(fovYdiv2) / pse::math::cos(fovYdiv2));
-    float w = cotFOV * (width / scale) / ratio;
-    float h = cotFOV * (height / scale);
-
-    mat4 output;
-    output.matrix[0] = w;
-    output.matrix[1] = 0.0F;
-    output.matrix[2] = 0.0F;
-    output.matrix[3] = 0.0F;
-
-    output.matrix[4] = 0.0F;
-    output.matrix[5] = h;
-    output.matrix[6] = 0.0F;
-    output.matrix[7] = 0.0F;
-
-    output.matrix[8] = 0.0F;
-    output.matrix[9] = 0.0F;
-    output.matrix[10] = (far + near) / (far - near);
-    output.matrix[11] = -1.0F;
-
-    output.matrix[12] = 0.0F;
-    output.matrix[13] = 0.0F;
-    output.matrix[14] = (2.0F * far * near) / (far - near);
-    output.matrix[15] = 0.0F;
-    return output;
-}
-
 //
 //  vec4 Math
 //
 
+vec4::vec4() : x(0.0F), y(0.0F), z(0.0F), w(0.0f) {}
 vec4::vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+vec4::vec4(const vec4& vector) { x = vector.x; y = vector.y; z = vector.z; w = vector.w; }
+vec4::vec4(const vec3& vector, float w_) : x(vector.x), y(vector.y), z(vector.z), w(w_) {}
 
-vec4::vec4(const vec4& vector)
+void vec4::set(float x_, float y_, float z_, float w_) { x = x_; y = y_; z = z_; w = w_; }
+void vec4::set(const vec4& vector) { x = vector.x; y = vector.y; z = vector.z; w = vector.w; }
+void vec4::set(const vec3& vector, float w_) { x = vector.x; y = vector.y; z = vector.z; w = w_; }
+
+vec4& vec4::operator=(const vec4& vector) { x = vector.x; y = vector.y; z = vector.z; w = vector.w; return *this; }
+vec4& vec4::operator=(const vec3& vector) { x = vector.x; y = vector.y; z = vector.z; return *this; }
+
+
+float vec4::dot(const vec4& other)
 {
+    float output;
     asm volatile(
-        "lqc2		$vf1, 0x00(%1)	\n"
-        "sqc2		$vf1, 0x00(%0)	\n"
-        :
-        : "r"(this->vector), "r"(vector.vector)
+        "lqc2     $vf4, 0x0(%1)  \n\t"
+        "lqc2     $vf5, 0x0(%2)  \n\t"
+        "vmul.xyzw $vf6, $vf4, $vf5 \n\t"
+        "vaddy.x  $vf6, $vf6, $vf6 \n\t"
+        "vaddz.x  $vf6, $vf6, $vf6 \n\t"
+        "vaddw.x  $vf6, $vf6, $vf6 \n\t"
+        "qmfc2    $2,  $vf6      \n\t"
+        "mtc1     $2,  %0       \n\t"
+        : "=f"(output)
+        : "r"(vector), "r"(other.vector)
     );
+    return output;
 }
 
-vec4::vec4(const vec3& vector, float w_)
-{
-    x = vector.x;
-    y = vector.y;
-    z = vector.z;
-    w = w_;
-}
+float vec4::length() { return sqrtf(dot(*this)); }
 
-vec4::vec4(const vec2& vector, float z_, float w_)
+vec4 vec4::normalized()
 {
-    x = vector.x;
-    y = vector.y;
-    z = z_;
-    w = w_;
-}
-
-void vec4::operator=(const vec4& vector)
-{
+    vec4 output;
     asm volatile(
-        "lqc2		$vf1, 0x00(%1)	\n"
-        "sqc2		$vf1, 0x00(%0)	\n"
+        "lqc2       $vf4, 0x0(%0)    \n\t"
+        "vmul.xyzw   $vf5, $vf4,  $vf4  \n\t"
+        "vaddy.x    $vf5, $vf5,  $vf5  \n\t"
+        "vaddz.x    $vf5, $vf5,  $vf5  \n\t"
+        "vaddw.x    $vf5, $vf5,  $vf5  \n\t"
+        "vrsqrt     $Q,   $vf0w, $vf5x \n\t"
+        "vwaitq                     \n\t"
+        "vsub.xyzw   $vf6, $vf0,  $vf0  \n\t"
+        "vwaitq                     \n\t"
+        "vmulq.xyzw  $vf6, $vf4,  $Q    \n\t"
+        "sqc2       $vf6, 0x0(%1)    \n\t"
         :
-        : "r"(this->vector), "r"(vector.vector)
+        : "r"(vector), "r"(output.vector)
     );
+    return output;
 }
+
+const vec4& vec4::normalize() { *this = normalized(); return *this; }
 
 vec4 operator+(const vec4& lhs, const vec4& rhs) 
 {
@@ -844,117 +500,6 @@ vec4 operator-(const vec4& vector)
     return {-vector.x, -vector.y, -vector.z, vector.w};
 }
 
-float dot(const vec4& lhs, const vec4& rhs)
-{
-    float output;
-    asm volatile(
-        "lqc2     $vf4, 0x0(%1)  \n\t"
-        "lqc2     $vf5, 0x0(%2)  \n\t"
-        "vmul.xyzw $vf6, $vf4, $vf5 \n\t"
-        "vaddy.x  $vf6, $vf6, $vf6 \n\t"
-        "vaddz.x  $vf6, $vf6, $vf6 \n\t"
-        "vaddw.x  $vf6, $vf6, $vf6 \n\t"
-        "qmfc2    $2,  $vf6      \n\t"
-        "mtc1     $2,  %0       \n\t"
-        : "=f"(output)
-        : "r"(lhs.vector), "r"(rhs.vector)
-    );
-    return output;
-}
-
-float dot3(const vec4& lhs, const vec4& rhs)
-{
-    float output;
-    asm volatile(
-        "lqc2     $vf4, 0x0(%1)  \n\t"
-        "lqc2     $vf5, 0x0(%2)  \n\t"
-        "vmul.xyz $vf6, $vf4, $vf5 \n\t"
-        "vaddy.x  $vf6, $vf6, $vf6 \n\t"
-        "vaddz.x  $vf6, $vf6, $vf6 \n\t"
-        "qmfc2    $2,  $vf6      \n\t"
-        "mtc1     $2,  %0       \n\t"
-        : "=f"(output)
-        : "r"(lhs.vector), "r"(rhs.vector)
-    );
-    return output;
-}
-
-vec4 cross(const vec4& lhs, const vec4& rhs)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2           $vf4,   0x0(%1)         \n\t"
-        "lqc2           $vf5,   0x0(%2)         \n\t"
-        "vopmula.xyz    $ACC,   $vf4,   $vf5    \n\t"
-        "vopmsub.xyz    $vf8,   $vf5,   $vf4    \n\t"
-        "vsub.w         $vf8,   $vf0,   $vf0    \n\t"
-        "sqc2           $vf8,   0x0(%0)         \n\t"
-        :
-        : "r"(output.vector), "r"(lhs.vector), "r"(rhs.vector)
-    );
-    return output;
-}
-
-vec4 normalize(const vec4& vector)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2       $vf4, 0x0(%0)    \n\t"
-        "vmul.xyzw   $vf5, $vf4,  $vf4  \n\t"
-        "vaddy.x    $vf5, $vf5,  $vf5  \n\t"
-        "vaddz.x    $vf5, $vf5,  $vf5  \n\t"
-        "vaddw.x    $vf5, $vf5,  $vf5  \n\t"
-        "vrsqrt     $Q,   $vf0w, $vf5x \n\t"
-        "vwaitq                     \n\t"
-        "vsub.xyzw   $vf6, $vf0,  $vf0  \n\t"
-        "vwaitq                     \n\t"
-        "vmulq.xyzw  $vf6, $vf4,  $Q    \n\t"
-        "sqc2       $vf6, 0x0(%1)    \n\t"
-        :
-        : "r"(vector.vector), "r"(output.vector)
-    );
-    return output;
-}
-
-vec4 normalize3(const vec4& vector)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2       $vf4, 0x0(%0)    \n\t"
-        "vmul.xyz   $vf5, $vf4,  $vf4  \n\t"
-        "vaddy.x    $vf5, $vf5,  $vf5  \n\t"
-        "vaddz.x    $vf5, $vf5,  $vf5  \n\t"
-        "vrsqrt     $Q,   $vf0w, $vf5x \n\t"
-        "vwaitq                     \n\t"
-        "vsub.xyz   $vf6, $vf0,  $vf0  \n\t"
-        "vaddw.xyz  $vf6, $vf6,  $vf4  \n\t"
-        "vwaitq                     \n\t"
-        "vmulq.xyz  $vf6, $vf4,  $Q    \n\t"
-        "sqc2       $vf6, 0x0(%1)    \n\t"
-        :
-        : "r"(vector.vector), "r"(output.vector)
-    );
-    return output;
-}
-
-vec4 lerp(const vec4& lhs, const vec4& rhs, float f)
-{
-    vec4 output;
-    asm volatile(
-        "lqc2       $vf4, 0x0(%1)       \n\t"  // $vf4 = v1
-        "lqc2       $vf5, 0x0(%2)       \n\t"  // $vf5 = v2
-        "mfc1       $8,  %3             \n\t"  // $vf6 = t
-        "qmtc2      $8,  $vf6           \n\t"  // lerp:
-        "vsub.xyzw  $vf7, $vf5, $vf4    \n\t"  // $vf7 = v2 - v1
-        "vmulx.xyzw $vf8, $vf7, $vf6    \n\t"  // $vf8 = $vf7 * t
-        "vadd.xyzw  $vf9, $vf8, $vf4    \n\t"  // $vf9 = $vf8 + $vf4
-        "sqc2       $vf9, 0x0(%0)       \n\t"  // v0  = $vf9
-        :
-        : "r"(output.vector), "r"(lhs.vector), "r"(rhs.vector), "f"(f)
-    );
-    return output;
-}
-
 std::ostream& operator<<(std::ostream& os, const vec4& vector)
 {
     os << "x=" << vector.x << " y=" << vector.y << " z=" << vector.z << " w=" << vector.w;
@@ -965,30 +510,34 @@ std::ostream& operator<<(std::ostream& os, const vec4& vector)
 //  vec3 Math
 //
 
+vec3::vec3() : x(0.0F), y(0.0F), z(0.0F) {}
 vec3::vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+vec3::vec3(const vec4& vector) : x(vector.x), y(vector.y), z(vector.z) {}
+vec3::vec3(const vec3& vector) : x(vector.x), y(vector.y), z(vector.z) {}
 
-vec3::vec3(const vec4& vector)
+void vec3::set(float x_, float y_, float z_) { x = x_; y = y_; z = z_; }
+void vec3::set(const vec4& vector) { x = vector.x; y = vector.y; z = vector.z; }
+void vec3::set(const vec3& vector) { x = vector.x; y = vector.y; z = vector.z; }
+
+vec3& vec3::operator=(const vec4& vector) { x = vector.x; y = vector.y; z = vector.z; return *this; }
+vec3& vec3::operator=(const vec3& vector) { x = vector.x; y = vector.y; z = vector.z; return *this; }
+
+float vec3::dot(const vec3& other) { return x * other.x + y * other.y + z * other.z; }
+
+float vec3::length() { return sqrtf(dot(*this)); }
+
+vec3 vec3::cross(const vec3& other)
 {
-    x = vector.x;
-    y = vector.y;
-    z = vector.z;
+    vec3 result;
+    result.x = y * other.z - z * other.y;
+    result.y = z * other.x - x * other.z;
+    result.z = x * other.y - y * other.x;
+    return result;
 }
 
-vec3::vec3(const vec3& vector)
-{
-    x = vector.x;
-    y = vector.y;
-    z = vector.z;
-}
+vec3 vec3::normalized() { return *this / length(); }
 
-vec3::vec3(const vec2& vector)
-{
-    x = vector.x;
-    y = vector.y;
-    z = 0.0F;
-}
-
-void vec3::operator=(const vec3& vector) { x = vector.x; y = vector.y; z = vector.z; }
+const vec3& vec3::normalize() { *this = normalized(); return *this; }
 
 vec3 operator+(const vec3& lhs, const vec3& rhs)
 {
@@ -1077,21 +626,6 @@ vec3 operator-(const vec3& vector)
     return { -vector.x, -vector.y, -vector.z };
 }
 
-float dot(const vec3& lhs, const vec3& rhs)
-{
-    return dot(vec4(lhs), vec4(rhs));
-}
-
-vec3 cross(const vec3& lhs, const vec3& rhs)
-{
-    return vec3(cross(vec4(lhs), vec4(rhs)));
-}
-
-vec3 normalize(const vec3& vector)
-{
-    return vec3(normalize(vec4(vector, 0.0F)));
-}
-
 std::ostream& operator<<(std::ostream& os, const vec3& vector)
 {
     os << "x=" << vector.x << " y=" << vector.y << " z=" << vector.z;
@@ -1102,27 +636,21 @@ std::ostream& operator<<(std::ostream& os, const vec3& vector)
 //  vec2 Math
 //
 
+vec2::vec2() : x(0.0F), y(0.0F) {}
 vec2::vec2(float x, float y) : x(x), y(y) {}
+vec2::vec2(const vec2& vector) : x(vector.x), y(vector.y) {}
 
-vec2::vec2(const vec4& vector)
-{
-    x = vector.x;
-    y = vector.y;
-}
+void vec2::set(float x_, float y_) { x = x_; y = y_; }
+void vec2::set(const vec2& vector) { x = vector.x; y = vector.y; }
 
-vec2::vec2(const vec3& vector)
-{
-    x = vector.x;
-    y = vector.y;
-}
+vec2& vec2::operator=(const vec2& vector) { x = vector.x; y = vector.y; return *this; }
 
-vec2::vec2(const vec2& vector)
-{
-    x = vector.x;
-    y = vector.y;
-}
+float vec2::dot(const vec2& other) { return x * other.x + y * other.y; }
 
-void vec2::operator=(const vec2& vector) { x = vector.x; y = vector.y; }
+float vec2::length() { return sqrtf(dot(*this)); }
+
+vec2 vec2::normalized() { return *this / length(); }
+const vec2& vec2::normalize() { *this = normalized(); return *this; }
 
 vec2 operator+(const vec2& lhs, const vec2& rhs) 
 {
@@ -1205,20 +733,363 @@ vec2 operator-(const vec2& vector)
     return {-vector.x, -vector.y};
 }
 
-float dot(const vec2& lhs, const vec2& rhs)
-{
-    return dot(vec4(lhs), vec4(rhs));
-}
-
-vec2 normalize(const vec2& vector)
-{
-    return vec2(normalize(vec4(vector, 0.0F, 0.0F)));
-}
-
 std::ostream& operator<<(std::ostream& os, const vec2& vector)
 {
     os << "x=" << vector.x << " y=" << vector.y;
     return os;
+}
+
+//
+//  Matrix Math
+//
+
+mat4::mat4() { identity(*this); }
+
+mat4::mat4(const mat4& matrix) { matrix_copy(this->matrix, (float*)matrix.matrix); }
+
+void mat4::set_identity() { identity(*this); }
+
+void mat4::set_translate(const vec3& position)
+{
+    set_identity();
+    columns[3] = vec4(position, 1.0F);
+}
+
+void mat4::set_rotate(const float& rotation, const vec3& axis)
+{
+    *this = pse::math::rotation(vec4(axis, 0.0F) * vec4(rotation, rotation, rotation, 0.0F));
+}
+
+void mat4::set_scale(const vec3& scale)
+{
+    set_identity();
+    m[0][0] = scale.x;
+    m[1][1] = scale.y;
+    m[2][2] = scale.z;
+}
+
+mat4 mat4::transpose() 
+{
+    return pse::math::transpose(*this);
+}
+
+void mat4::operator=(const mat4& matrix) { matrix_copy(this->matrix, (float*)matrix.matrix); }
+
+mat4 operator*(const mat4& lhs, const mat4& rhs)
+{
+    mat4 output;
+    asm volatile(
+        "lqc2         $vf1, 0x00(%1) \n\t"
+        "lqc2         $vf2, 0x10(%1) \n\t"
+        "lqc2         $vf3, 0x20(%1) \n\t"
+        "lqc2         $vf4, 0x30(%1) \n\t"
+        "lqc2         $vf5, 0x00(%2) \n\t"
+        "lqc2         $vf6, 0x10(%2) \n\t"
+        "lqc2         $vf7, 0x20(%2) \n\t"
+        "lqc2         $vf8, 0x30(%2) \n\t"
+        "vmulax.xyzw  $ACC, $vf5, $vf1 \n\t"
+        "vmadday.xyzw $ACC, $vf6, $vf1 \n\t"
+        "vmaddaz.xyzw $ACC, $vf7, $vf1 \n\t"
+        "vmaddw.xyzw  $vf1, $vf8, $vf1 \n\t"
+        "vmulax.xyzw  $ACC, $vf5, $vf2 \n\t"
+        "vmadday.xyzw $ACC, $vf6, $vf2 \n\t"
+        "vmaddaz.xyzw $ACC, $vf7, $vf2 \n\t"
+        "vmaddw.xyzw  $vf2, $vf8, $vf2 \n\t"
+        "vmulax.xyzw  $ACC, $vf5, $vf3 \n\t"
+        "vmadday.xyzw $ACC, $vf6, $vf3 \n\t"
+        "vmaddaz.xyzw $ACC, $vf7, $vf3 \n\t"
+        "vmaddw.xyzw  $vf3, $vf8, $vf3 \n\t"
+        "vmulax.xyzw  $ACC, $vf5, $vf4 \n\t"
+        "vmadday.xyzw $ACC, $vf6, $vf4 \n\t"
+        "vmaddaz.xyzw $ACC, $vf7, $vf4 \n\t"
+        "vmaddw.xyzw  $vf4, $vf8, $vf4 \n\t"
+        "sqc2         $vf1, 0x00(%0) \n\t"
+        "sqc2         $vf2, 0x10(%0) \n\t"
+        "sqc2         $vf3, 0x20(%0) \n\t"
+        "sqc2         $vf4, 0x30(%0) \n\t"
+        :
+        : "r"(output.matrix), "r"(rhs.matrix), "r"(lhs.matrix)
+        : "memory"
+    );
+    return output;
+}
+
+vec4 operator*(const mat4& matrix, const vec4& vector)
+{
+    vec4 output;
+    asm volatile(
+        "lqc2		$vf1, 0x00(%2)	\n"
+        "lqc2		$vf2, 0x10(%2)	\n"
+        "lqc2		$vf3, 0x20(%2)	\n"
+        "lqc2		$vf4, 0x30(%2)	\n"
+        "lqc2		$vf5, 0x00(%1)	\n"
+        "vmulaw	$ACC, $vf4, $vf0\n"
+        "vmaddax	$ACC, $vf1, $vf5\n"
+        "vmadday	$ACC, $vf2, $vf5\n"
+        "vmaddz	$vf6, $vf3, $vf5\n"
+        "sqc2		$vf6, 0x00(%0)	\n"
+        :
+        : "r"(output.vector), "r"(vector.vector), "r"(matrix.matrix)
+    );
+    return output;
+}
+
+vec4 operator*(const vec4& vector, const mat4& matrix)
+{
+    vec4 output;
+    asm volatile(
+        "lqc2		$vf1, 0x00(%2)	\n"
+        "lqc2		$vf2, 0x10(%2)	\n"
+        "lqc2		$vf3, 0x20(%2)	\n"
+        "lqc2		$vf4, 0x30(%2)	\n"
+        "lqc2		$vf5, 0x00(%1)	\n"
+        "vmulaw	$ACC, $vf4, $vf0\n"
+        "vmaddax	$ACC, $vf1, $vf5\n"
+        "vmadday	$ACC, $vf2, $vf5\n"
+        "vmaddz	$vf6, $vf3, $vf5\n"
+        "sqc2		$vf6, 0x00(%0)	\n"
+        :
+        : "r"(output.vector), "r"(vector.vector), "r"(matrix.matrix)
+    );
+    return output;
+}
+
+std::ostream& operator<<(std::ostream& os, const mat4& matrix)
+{
+    os << std::fixed;
+    os << std::setprecision(2);
+    for (int i = 0; i < 4; ++i) 
+        for (int j = 0; j < 4; ++j) 
+        {
+            os << "m" << i << j << "=" << matrix.m[i][j];
+            if(j < 4 || i < 3) os << " ";
+        }
+    return os;
+}
+
+void identity(const mat4& matrix)
+{
+    asm volatile(
+        "vsub.xyzw  $vf4, $vf0, $vf0 \n\t"
+        "vadd.w     $vf4, $vf4, $vf0 \n\t"
+        "vmr32.xyzw $vf5, $vf4       \n\t"
+        "vmr32.xyzw $vf6, $vf5       \n\t"
+        "vmr32.xyzw $vf7, $vf6       \n\t"
+        "sqc2       $vf4, 0x30(%0)   \n\t"
+        "sqc2       $vf5, 0x20(%0)   \n\t"
+        "sqc2       $vf6, 0x10(%0)   \n\t"
+        "sqc2       $vf7, 0x0(%0)    \n\t"
+        :
+        : "r"(matrix.matrix)
+    );
+}
+
+mat4 transpose(const mat4& matrix)
+{
+    mat4 output;
+    output.m[0][0] = matrix.m[0][0];
+    output.m[0][1] = matrix.m[1][0];
+    output.m[0][2] = matrix.m[2][0];
+    output.m[0][3] = matrix.m[3][0];
+
+    output.m[1][0] = matrix.m[0][1];
+    output.m[1][1] = matrix.m[1][1];
+    output.m[1][2] = matrix.m[2][1];
+    output.m[1][3] = matrix.m[3][1];
+
+    output.m[2][0] = matrix.m[0][2];
+    output.m[2][1] = matrix.m[1][2];
+    output.m[2][2] = matrix.m[2][2];
+    output.m[2][3] = matrix.m[3][2];
+
+    output.m[3][0] = matrix.m[0][3];
+    output.m[3][1] = matrix.m[1][3];
+    output.m[3][2] = matrix.m[2][3];
+    output.m[3][3] = matrix.m[3][3];
+    return output;
+}
+
+mat4 translation(const vec4& positon)
+{
+    mat4 output = mat4();
+    output.columns[3] = positon;
+    return output;
+}
+
+mat4 rotationX(const float& r)
+{
+    mat4 output = mat4();
+    float c = cos(r);
+    float s = sin(r);
+    output.matrix[5] = c;   
+    output.matrix[6] = s;   
+    output.matrix[9] = -s;  
+    output.matrix[10] = c;  
+    return output;
+}
+
+mat4 rotationY(const float& r)
+{
+    mat4 output = mat4();
+    float c = cos(r);
+    float s = sin(r);
+    output.matrix[0] = c;  
+    output.matrix[2] = -s; 
+    output.matrix[8] = s;  
+    output.matrix[10] = c; 
+    return output;
+}
+
+mat4 rotationZ(const float& r)
+{
+    mat4 output = mat4();
+    float c = cos(r);
+    float s = sin(r);
+    output.matrix[0] = c;  
+    output.matrix[1] = s;  
+    output.matrix[4] = -s; 
+    output.matrix[5] = c;  
+    return output;
+}
+
+mat4 rotation(const vec4& rotation)
+{
+    return rotationZ(rotation.z) * rotationY(rotation.y) * rotationX(rotation.x);
+}
+
+mat4 scale(const vec4& scale)
+{
+    mat4 output = mat4();
+    output.matrix[0] = scale.x;
+    output.matrix[5] = scale.y;
+    output.matrix[10] = scale.z;
+    output.matrix[15] = scale.w;
+    return output;
+}
+
+mat4 transformation(const vec4& position, const vec4& rotation, const vec4& scale)
+{
+    return pse::math::scale(scale) * pse::math::rotation(rotation) * pse::math::translation(position);
+}
+
+mat4 lookAt(const vec4& position, const vec4& lookAt, const vec4& up)
+{
+    mat4 output;
+    vec4 viewvec, upvec;
+    asm volatile(
+        // eye
+        "lqc2          $vf4, 0x00(%2)      \n\t"
+        // obj
+        "lqc2		    $vf5, 0x00(%3)      \n\t"
+        // view_vec = $vf7
+        "vsub.xyz	    $vf7, $vf4, $vf5    \n\t"
+        "vmove.xyzw   $vf6, $vf0          \n\t"
+        // $vf6 = { 0.0f, 1.0f, 0.0f, 1.0f }
+        "vaddw.y		$vf6, $vf0, $vf0    \n\t"
+        "vopmula.xyz	$ACC, $vf6, $vf7    \n\t"
+        // vec = $vf9
+        "vopmsub.xyz	$vf9, $vf7, $vf6    \n\t"
+        "vopmula.xyz	$ACC, $vf7, $vf9    \n\t"
+        // up_vec = $vf8
+        "vopmsub.xyz	$vf8, $vf9, $vf7    \n\t"
+        // view_vec
+        "sqc2		    $vf7, 0x00(%0)      \n\t"
+        // up_vec
+        "sqc2		    $vf6, 0x00(%1)      \n\t"
+        :
+        : "r"(viewvec.vector), "r"(upvec.vector), "r"(position.vector), "r"(lookAt.vector)
+    );
+
+    asm volatile(
+        "lqc2         $vf9, 0x00(%2)          \n\t"
+        // mtmp.unit()
+        "lqc2		    $vf10, 0x00(%3)         \n\t"
+        // mtmp[1][PW] = 0.0F
+        "vsub.w       $vf5, $vf0, $vf0        \n\t"
+        // vtmp.outerProduct(vy, vz);
+        "vopmula.xyz  $ACC, $vf10, $vf9       \n\t"
+        "vopmsub.xyz	$vf11, $vf9, $vf10      \n\t"
+        // mtmp[0] = vtmp.normalize();
+        "vmul.xyz	    $vf12, $vf11, $vf11     \n\t"
+        "vaddy.x		$vf12, $vf12, $vf12     \n\t"
+        "vaddz.x		$vf12, $vf12, $vf12     \n\t"
+        "vrsqrt       $Q, $vf0w, $vf12x       \n\t"
+        "vsub.xyzw    $vf4, $vf0, $vf0        \n\t"
+        "vwaitq                               \n\t"
+        "vmulq.xyz    $vf4, $vf11, $Q         \n\t"
+        // mtmp[2] = vz.normalize();
+        "vmul.xyz     $vf12, $vf9, $vf9       \n\t"
+        "vaddy.x		$vf12, $vf12, $vf12     \n\t"
+        "vaddz.x		$vf12, $vf12, $vf12     \n\t"
+        "vrsqrt       $Q, $vf0w, $vf12x       \n\t"
+        "vsub.xyzw    $vf6, $vf0, $vf0        \n\t"
+        "vwaitq                               \n\t"
+        "vmulq.xyz    $vf6, $vf9, $Q          \n\t"
+        // mtmp[1].outerProduct(mtmp[2], mtmp[0]);
+        "vopmula.xyz	$ACC, $vf6, $vf4        \n\t"
+        "vopmsub.xyz	$vf5, $vf4, $vf6        \n\t"
+        // mtmp.transpose(pos);
+        "lqc2		    $vf7, 0x00(%1)          \n\t"
+        // m = mtmp.inverse();
+        "qmfc2.ni		$11, $vf0               \n\t"
+        "qmfc2.ni		$8, $vf4                \n\t"
+        "qmfc2.ni		$9, $vf5                \n\t"
+        "qmfc2.ni		$10, $vf6               \n\t"
+
+        "pextlw		$12, $9, $8             \n\t"
+        "pextuw		$13, $9, $8             \n\t"
+        "pextlw		$14, $11, $10           \n\t"
+        "pextuw		$15, $11, $10           \n\t"
+        "pcpyld		$8, $14, $12            \n\t"
+        "pcpyud		$9, $12, $14            \n\t"
+        "pcpyld		$10, $15, $13           \n\t"
+
+        "qmtc2.ni		$8, $vf16               \n\t"
+        "qmtc2.ni		$9, $vf17               \n\t"
+        "qmtc2.ni		$10, $vf18              \n\t"
+        "vmulax.xyz	$ACC, $vf16, $vf7       \n\t"
+        "vmadday.xyz	$ACC, $vf17, $vf7       \n\t"
+        "vmaddz.xyz	$vf5, $vf18, $vf7       \n\t"
+        "vsub.xyzw	$vf5, $vf0, $vf5        \n\t"
+
+        "sq			$8, 0x00(%0)            \n\t"
+        "sq			$9, 0x10(%0)            \n\t"
+        "sq			$10, 0x20(%0)           \n\t"
+        "sqc2			$vf5, 0x30(%0)          \n\t"
+        :
+        : "r"(output.matrix), "r"(position.vector), "r"(viewvec.vector), "r"(upvec.vector)
+    );
+    return output;
+}
+
+mat4 projection(const float& fov, const float& width, const float& height, const float& scale, const float& ratio, const float& near, const float& far)
+{
+    float fovYdiv2 = HALF_ANG2RAD * fov;
+    float cotFOV = 1.0F / (pse::math::sin(fovYdiv2) / pse::math::cos(fovYdiv2));
+    float w = cotFOV * (width / scale) / ratio;
+    float h = cotFOV * (height / scale);
+
+    mat4 output;
+    output.matrix[0] = w;
+    output.matrix[1] = 0.0F;
+    output.matrix[2] = 0.0F;
+    output.matrix[3] = 0.0F;
+
+    output.matrix[4] = 0.0F;
+    output.matrix[5] = h;
+    output.matrix[6] = 0.0F;
+    output.matrix[7] = 0.0F;
+
+    output.matrix[8] = 0.0F;
+    output.matrix[9] = 0.0F;
+    output.matrix[10] = (far + near) / (far - near);
+    output.matrix[11] = -1.0F;
+
+    output.matrix[12] = 0.0F;
+    output.matrix[13] = 0.0F;
+    output.matrix[14] = (2.0F * far * near) / (far - near);
+    output.matrix[15] = 0.0F;
+    return output;
 }
 
 }

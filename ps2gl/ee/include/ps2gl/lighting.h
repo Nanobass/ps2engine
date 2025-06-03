@@ -9,7 +9,7 @@
 
 #include "GL/gl.h"
 
-#include "ps2s/cpu_vector.h"
+#include <ps2math.hpp>
 
 #include "ps2gl/debug.h"
 #include "ps2gl/dlgmanager.h"
@@ -34,12 +34,12 @@ public:
     {
     }
 
-    virtual void SetAmbient(cpu_vec_xyzw ambient)     = 0;
-    virtual void SetDiffuse(cpu_vec_xyzw diffuse)     = 0;
-    virtual void SetSpecular(cpu_vec_xyzw specular)   = 0;
-    virtual void SetPosition(cpu_vec_xyzw position)   = 0;
-    virtual void SetDirection(cpu_vec_xyzw direction) = 0;
-    virtual void SetSpotDirection(cpu_vec_xyzw dir)   = 0;
+    virtual void SetAmbient(pse::math::vec4 ambient)     = 0;
+    virtual void SetDiffuse(pse::math::vec4 diffuse)     = 0;
+    virtual void SetSpecular(pse::math::vec4 specular)   = 0;
+    virtual void SetPosition(pse::math::vec4 position)   = 0;
+    virtual void SetDirection(pse::math::vec4 direction) = 0;
+    virtual void SetSpotDirection(pse::math::vec4 dir)   = 0;
     virtual void SetSpotCutoff(float cutoff)          = 0;
     virtual void SetSpotExponent(float exp)           = 0;
     virtual void SetConstantAtten(float atten)        = 0;
@@ -54,8 +54,8 @@ public:
  */
 
 class CImmLight : public CLight {
-    cpu_vec_xyzw Ambient, Diffuse, Specular;
-    cpu_vec_xyzw Position, SpotDirection;
+    pse::math::vec4 Ambient, Diffuse, Specular;
+    pse::math::vec4 Position, SpotDirection;
     float SpotCutoff, SpotExponent;
     float ConstantAtten, LinearAtten, QuadAtten;
     bool bIsEnabled;
@@ -75,21 +75,21 @@ class CImmLight : public CLight {
 public:
     CImmLight(CGLContext& context, int lightNum);
 
-    void SetAmbient(cpu_vec_xyzw ambient)
+    void SetAmbient(pse::math::vec4 ambient)
     {
         Ambient = ambient;
         TellRendererLightPropChanged();
     }
-    void SetDiffuse(cpu_vec_xyzw diffuse)
+    void SetDiffuse(pse::math::vec4 diffuse)
     {
         Diffuse = diffuse;
         TellRendererLightPropChanged();
     }
-    void SetSpecular(cpu_vec_xyzw specular);
-    void SetPosition(cpu_vec_xyzw position);
-    void SetDirection(cpu_vec_xyzw direction);
+    void SetSpecular(pse::math::vec4 specular);
+    void SetPosition(pse::math::vec4 position);
+    void SetDirection(pse::math::vec4 direction);
 
-    void SetSpotDirection(cpu_vec_xyzw dir)
+    void SetSpotDirection(pse::math::vec4 dir)
     {
         SpotDirection = dir;
         TellRendererLightPropChanged();
@@ -127,12 +127,12 @@ public:
 
     void SetEnabled(bool enabled);
 
-    inline cpu_vec_xyzw GetAmbient() const { return Ambient; }
-    inline cpu_vec_xyzw GetDiffuse() const { return Diffuse; }
-    inline cpu_vec_xyzw GetSpecular() const { return Specular; }
-    inline cpu_vec_xyzw GetPosition() const { return Position; }
+    inline pse::math::vec4 GetAmbient() const { return Ambient; }
+    inline pse::math::vec4 GetDiffuse() const { return Diffuse; }
+    inline pse::math::vec4 GetSpecular() const { return Specular; }
+    inline pse::math::vec4 GetPosition() const { return Position; }
 
-    inline cpu_vec_xyzw GetSpotDir() const { return SpotDirection; }
+    inline pse::math::vec4 GetSpotDir() const { return SpotDirection; }
     inline float GetSpotCutoff() const { return SpotCutoff; }
     inline float GetSpotExponent() const { return SpotExponent; }
 
@@ -166,13 +166,13 @@ public:
     {
     }
 
-    void SetAmbient(cpu_vec_xyzw ambient);
-    void SetDiffuse(cpu_vec_xyzw diffuse);
-    void SetSpecular(cpu_vec_xyzw specular);
-    void SetPosition(cpu_vec_xyzw position);
-    void SetDirection(cpu_vec_xyzw direction);
+    void SetAmbient(pse::math::vec4 ambient);
+    void SetDiffuse(pse::math::vec4 diffuse);
+    void SetSpecular(pse::math::vec4 specular);
+    void SetPosition(pse::math::vec4 position);
+    void SetDirection(pse::math::vec4 direction);
 
-    void SetSpotDirection(cpu_vec_xyzw dir);
+    void SetSpotDirection(pse::math::vec4 dir);
     void SetSpotCutoff(float cutoff);
     void SetSpotExponent(float exp);
 
@@ -204,7 +204,7 @@ public:
     virtual CLight& GetLight(int num) = 0;
 
     virtual void SetLightingEnabled(bool enabled)      = 0;
-    virtual void SetGlobalAmbient(cpu_vec_xyzw newAmb) = 0;
+    virtual void SetGlobalAmbient(pse::math::vec4 newAmb) = 0;
 };
 
 /********************************************
@@ -212,8 +212,8 @@ public:
  */
 
 class CImmLighting : public CLighting {
-    cpu_vec_xyzw CurrentColor;
-    cpu_vec_xyzw GlobalAmbient;
+    pse::math::vec4 CurrentColor;
+    pse::math::vec4 GlobalAmbient;
     CImmLight Light0, Light1, Light2, Light3, Light4, Light5, Light6, Light7;
     CImmLight* Lights[NumLights];
     bool IsEnabled;
@@ -242,12 +242,12 @@ public:
     }
     bool GetLightingEnabled() const { return IsEnabled; }
 
-    void SetGlobalAmbient(cpu_vec_xyzw newAmb)
+    void SetGlobalAmbient(pse::math::vec4 newAmb)
     {
         GlobalAmbient = newAmb;
         TellRendererLightPropChanged();
     }
-    cpu_vec_xyzw GetGlobalAmbient() { return GlobalAmbient; }
+    pse::math::vec4 GetGlobalAmbient() { return GlobalAmbient; }
 
     void SpecularChanged();
     void MaterialHasSpecular();
@@ -277,7 +277,7 @@ public:
     CLight& GetLight(int num) { return GetDListLight(num); }
 
     void SetLightingEnabled(bool enabled);
-    void SetGlobalAmbient(cpu_vec_xyzw newAmb);
+    void SetGlobalAmbient(pse::math::vec4 newAmb);
 };
 
 #endif // ps2gl_lighting_h

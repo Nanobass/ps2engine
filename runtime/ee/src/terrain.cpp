@@ -37,20 +37,21 @@ void CTerrainChunk::GenerateTriangles(int index, pse::math::vec3* vertlist) {
         pse::math::vec3 p1 = vertlist[triTable[index][t + 1]];
         pse::math::vec3 p2 = vertlist[triTable[index][t + 2]];
         
-        pse::math::vec4 u = p1 - p0;
-        pse::math::vec4 v = p2 - p0;
-        pse::math::vec4 cross = pse::math::cross(u, v);
-        pse::math::vec4 normal = pse::math::normalize(cross);
+        pse::math::vec3 u = p1 - p0;
+        pse::math::vec3 v = p2 - p0;
+        pse::math::vec3 cross = u.cross(v);
+        pse::math::vec3 normal = cross.normalized();
 
-        //pse::math::color color = pse::math::color(1,1,1);
-        pse::math::color color = normal;
+        pse::math::color color = pse::math::color(normal, 1.0F);
 
         glColor3f(color.r, color.g, color.b);
         glNormal3f(normal.x, normal.y, normal.z);
         glVertex3f(p0.x, p0.y, p0.z);
+        
         glColor3f(color.r, color.g, color.b);
         glNormal3f(normal.x, normal.y, normal.z);
         glVertex3f(p1.x, p1.y, p1.z);
+        
         glColor3f(color.r, color.g, color.b);
         glNormal3f(normal.x, normal.y, normal.z);
         glVertex3f(p2.x, p2.y, p2.z);

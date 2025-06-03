@@ -23,12 +23,12 @@ CImmMaterial::CImmMaterial(CGLContext& context)
 {
 }
 
-void CImmMaterial::SetSpecular(cpu_vec_xyzw specular)
+void CImmMaterial::SetSpecular(pse::math::vec4 specular)
 {
     TellRendererMaterialChanged();
     Specular = specular;
 
-    if (Specular != cpu_vec_4(0, 0, 0, 0))
+    if (Specular != pse::math::vec4(0, 0, 0, 0))
         GLContext.GetImmLighting().MaterialHasSpecular();
     else {
         GLContext.SpecularEnabledChanged();
@@ -38,7 +38,7 @@ void CImmMaterial::SetSpecular(cpu_vec_xyzw specular)
 
 void CImmMaterial::LightsHaveSpecular()
 {
-    if (Specular != cpu_vec_4(0, 0, 0, 0)) {
+    if (Specular != pse::math::vec4(0, 0, 0, 0)) {
         GLContext.SpecularEnabledChanged();
         GLContext.GetImmGeomManager().GetRendererManager().SpecularEnabledChanged(true);
     }
@@ -49,11 +49,11 @@ void CImmMaterial::LightsHaveSpecular()
  */
 
 class CSetMaterialPropCmd : public CDListCmd {
-    cpu_vec_xyzw Value;
+    pse::math::vec4 Value;
     GLenum Property;
 
 public:
-    CSetMaterialPropCmd(GLenum prop, cpu_vec_xyzw value)
+    CSetMaterialPropCmd(GLenum prop, pse::math::vec4 value)
         : Value(value)
         , Property(prop)
     {
@@ -65,21 +65,21 @@ public:
     }
 };
 
-void CDListMaterial::SetAmbient(cpu_vec_xyzw ambient)
+void CDListMaterial::SetAmbient(pse::math::vec4 ambient)
 {
     CDList& dlist = pGLContext->GetDListManager().GetOpenDList();
     dlist += CSetMaterialPropCmd(GL_AMBIENT, ambient);
     TellRendererMaterialChanged();
 }
 
-void CDListMaterial::SetDiffuse(cpu_vec_xyzw diffuse)
+void CDListMaterial::SetDiffuse(pse::math::vec4 diffuse)
 {
     CDList& dlist = pGLContext->GetDListManager().GetOpenDList();
     dlist += CSetMaterialPropCmd(GL_DIFFUSE, diffuse);
     TellRendererMaterialChanged();
 }
 
-void CDListMaterial::SetSpecular(cpu_vec_xyzw specular)
+void CDListMaterial::SetSpecular(pse::math::vec4 specular)
 {
     CDList& dlist = pGLContext->GetDListManager().GetOpenDList();
     dlist += CSetMaterialPropCmd(GL_SPECULAR, specular);
@@ -87,7 +87,7 @@ void CDListMaterial::SetSpecular(cpu_vec_xyzw specular)
     GLContext.SpecularEnabledChanged(); // maybe
 }
 
-void CDListMaterial::SetEmission(cpu_vec_xyzw emission)
+void CDListMaterial::SetEmission(pse::math::vec4 emission)
 {
     CDList& dlist = pGLContext->GetDListManager().GetOpenDList();
     dlist += CSetMaterialPropCmd(GL_EMISSION, emission);
@@ -97,7 +97,7 @@ void CDListMaterial::SetEmission(cpu_vec_xyzw emission)
 void CDListMaterial::SetShininess(float shine)
 {
     CDList& dlist = pGLContext->GetDListManager().GetOpenDList();
-    dlist += CSetMaterialPropCmd(GL_SHININESS, cpu_vec_xyzw(shine, 0, 0, 0));
+    dlist += CSetMaterialPropCmd(GL_SHININESS, pse::math::vec4(shine, 0, 0, 0));
     TellRendererMaterialChanged();
 }
 
@@ -105,7 +105,7 @@ void CDListMaterial::SetShininess(float shine)
  * CMaterialManager
  */
 
-void CMaterialManager::Color(cpu_vec_xyzw color)
+void CMaterialManager::Color(pse::math::vec4 color)
 {
     CurColor = color;
 
@@ -208,23 +208,23 @@ void glMaterialfv(GLenum face, GLenum pname, const GLfloat* params)
     case GL_FRONT:
         switch (pname) {
         case GL_AMBIENT:
-            material.SetAmbient(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+            material.SetAmbient(pse::math::vec4(params[0], params[1], params[2], params[3]));
             break;
         case GL_DIFFUSE:
-            material.SetDiffuse(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+            material.SetDiffuse(pse::math::vec4(params[0], params[1], params[2], params[3]));
             break;
         case GL_SPECULAR:
-            material.SetSpecular(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+            material.SetSpecular(pse::math::vec4(params[0], params[1], params[2], params[3]));
             break;
         case GL_EMISSION:
-            material.SetEmission(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+            material.SetEmission(pse::math::vec4(params[0], params[1], params[2], params[3]));
             break;
         case GL_SHININESS:
             material.SetShininess(*params);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            material.SetAmbient(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
-            material.SetDiffuse(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+            material.SetAmbient(pse::math::vec4(params[0], params[1], params[2], params[3]));
+            material.SetDiffuse(pse::math::vec4(params[0], params[1], params[2], params[3]));
             break;
         default:
             mError("shouldn't get here");

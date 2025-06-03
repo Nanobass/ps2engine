@@ -4,7 +4,7 @@
 	  General Public License Version 2.1. See the file "COPYING" in the
 	  main directory of this archive for more details.                             */
 
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 #include "ps2s/math.h"
 #include "ps2s/packet.h"
 
@@ -229,20 +229,20 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         bool doLighting = glContext.GetImmLighting().GetLightingEnabled();
 
         // transpose of object to world space xfrm (for light directions)
-        cpu_mat_44 objToWorldXfrmTrans = glContext.GetModelViewStack().GetTop();
+        pse::math::mat4 objToWorldXfrmTrans = glContext.GetModelViewStack().GetTop();
         // clear any translations.. should be doing a 3x3 transpose..
-        objToWorldXfrmTrans.set_col3(cpu_vec_xyzw(0, 0, 0, 1));
+        objToWorldXfrmTrans.columns[3].set(0.0f, 0.0f, 0.0f, 1.0f);
         objToWorldXfrmTrans = objToWorldXfrmTrans.transpose();
         // do we need to rescale normals?
-        cpu_mat_44 normalRescale;
+        pse::math::mat4 normalRescale;
         normalRescale.set_identity();
         float normalScale            = 1.0f;
         CImmDrawContext& drawContext = glContext.GetImmDrawContext();
         if (drawContext.GetRescaleNormals()) {
-            cpu_vec_xyzw fake_normal(1, 0, 0, 0);
+            pse::math::vec4 fake_normal(1, 0, 0, 0);
             fake_normal = objToWorldXfrmTrans * fake_normal;
-            normalScale = 1.0f / fake_normal.length();
-            normalRescale.set_scale(cpu_vec_xyz(normalScale, normalScale, normalScale));
+            normalScale = 1.0f / fake_normal.length(); 
+            normalRescale.set_scale(pse::math::vec3(normalScale, normalScale, normalScale));
         }
         objToWorldXfrmTrans = normalRescale * objToWorldXfrmTrans;
 
@@ -260,9 +260,12 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         // also turns on/off culling
         float bfc_mult = (float)drawContext.GetCullFaceDir();
         unsigned int bfc_word;
-        asm(" ## nop ## "
+        asm (
+            ""
             : "=r"(bfc_word)
-            : "0"(bfc_mult));
+            : "0"(bfc_mult)
+        );
+
         bool do_culling = drawContext.GetDoCullFace() && (primType > GL_LINE_STRIP);
         packet += bfc_word | (unsigned int)do_culling << 5;
 
@@ -297,11 +300,11 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         }
 
         // global ambient
-        cpu_vec_4 globalAmb;
+        pse::math::vec4 globalAmb;
         if (doLighting)
             globalAmb = lighting.GetGlobalAmbient() * maxColorValue;
         else
-            globalAmb = cpu_vec_4(0, 0, 0, 0);
+            globalAmb = pse::math::vec4(0, 0, 0, 0);
         packet.Add((uint32_t*)&globalAmb, 3);
 
         // stick in the offset to convert clip space depth value to GS
@@ -313,7 +316,7 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         CImmMaterial& material = glContext.GetMaterialManager().GetImmMaterial();
 
         // add emissive component
-        cpu_vec_4 emission;
+        pse::math::vec4 emission;
         if (doLighting)
             emission = material.GetEmission() * maxColorValue;
         else
@@ -324,11 +327,14 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         packet += material.GetAmbient();
 
         // diffuse
-        cpu_vec_4 matDiffuse = material.GetDiffuse();
+        pse::math::vec4 matDiffuse = material.GetDiffuse();
         // the alpha value is set to the alpha of the diffuse in the renderers;
         // this should be the current color alpha if lighting is disabled
         if (!doLighting)
-            matDiffuse[3] = glContext.GetMaterialManager().GetCurColor()[3];
+        {
+            matDiffuse.w = glContext.GetMaterialManager().GetCurColor().w;
+        }
+            
         packet += matDiffuse;
 
         // specular
@@ -338,14 +344,14 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         packet += drawContext.GetVertexXform();
 
         // fixed vertToEye vector for non-local specular
-        cpu_vec_xyzw vertToEye(0.0f, 0.0f, 1.0f, 0.0f);
+        pse::math::vec4 vertToEye(0.0f, 0.0f, 1.0f, 0.0f);
         packet += objToWorldXfrmTrans * vertToEye;
 
         // transpose of object to world space transform
         packet += objToWorldXfrmTrans;
 
         // world to object space xfrm (for light positions)
-        cpu_mat_44 worldToObjXfrm = glContext.GetModelViewStack().GetInvTop();
+        pse::math::mat4 worldToObjXfrm = glContext.GetModelViewStack().GetInvTop();
         packet += worldToObjXfrm;
 
         // giftag - this is down at the bottom to make sure that when switching

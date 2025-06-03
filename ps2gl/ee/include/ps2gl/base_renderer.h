@@ -9,7 +9,7 @@
 
 #include "ps2gl/renderer.h"
 
-#include "ps2s/cpu_vector.h"
+#include <ps2math.hpp>
 #include "ps2s/gs.h"
 
 /********************************************
@@ -25,7 +25,7 @@ protected:
 
     // cached in DrawArrays from geometry manager for XferBlock
     float CurTexCoord[2];
-    cpu_vec_xyz CurNormal;
+    pse::math::vec3 CurNormal;
     CDmaPacket *TexCoordBuf, *NormalBuf;
 
     int WordsPerVertex, WordsPerNormal, WordsPerTexCoord, WordsPerColor;

@@ -8,7 +8,7 @@
 
 #include "GL/ps2gl.h"
 
-#include "ps2s/cpu_matrix.h"
+#include <ps2math.hpp>
 #include "ps2s/displayenv.h"
 #include "ps2s/math.h"
 #include "ps2s/packet.h"
@@ -290,7 +290,7 @@ void glNormal3f(GLfloat x, GLfloat y, GLfloat z)
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
 
     CGeomManager& gmanager = pGLContext->GetGeomManager();
-    gmanager.Normal(cpu_vec_xyz(x, y, z));
+    gmanager.Normal(pse::math::vec3(x, y, z));
 }
 
 void glNormal3fv(const GLfloat* v)
@@ -305,7 +305,7 @@ void glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
 
     CGeomManager& gmanager = pGLContext->GetGeomManager();
-    gmanager.Vertex(cpu_vec_xyzw(x, y, z, w));
+    gmanager.Vertex(pse::math::vec4(x, y, z, w));
 }
 
 void glVertex4fv(const GLfloat* vertex)
@@ -363,7 +363,7 @@ void glColor3f(GLfloat red, GLfloat green, GLfloat blue)
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
 
     CGeomManager& gmanager = pGLContext->GetGeomManager();
-    gmanager.Color(cpu_vec_xyzw(red, green, blue, 1.0f));
+    gmanager.Color(pse::math::vec4(red, green, blue, 1.0f));
 }
 
 void glColor3fv(const GLfloat* color)
@@ -378,7 +378,7 @@ void glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
 
     CGeomManager& gmanager = pGLContext->GetGeomManager();
-    gmanager.Color(cpu_vec_xyzw(red, green, blue, alpha));
+    gmanager.Color(pse::math::vec4(red, green, blue, alpha));
 }
 
 void glColor4fv(const GLfloat* color)
@@ -393,7 +393,7 @@ void glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
 
     CGeomManager& gmanager = pGLContext->GetGeomManager();
-    gmanager.Color(cpu_vec_xyzw(red / 255.0F, green / 255.0F, blue / 255.0F, alpha / 255.0F));
+    gmanager.Color(pse::math::vec4(red / 255.0F, green / 255.0F, blue / 255.0F, alpha / 255.0F));
 }
 
 void glEnd(void)

@@ -49,10 +49,10 @@ public:
     void EndDListDef();
 
     void BeginGeom(GLenum mode);
-    void Vertex(cpu_vec_xyzw newVert);
-    void Normal(cpu_vec_xyz normal);
+    void Vertex(pse::math::vec4 newVert);
+    void Normal(pse::math::vec3 normal);
     void TexCoord(float u, float v);
-    void Color(cpu_vec_xyzw color);
+    void Color(pse::math::vec4 color);
     void EndGeom();
     void DrawArrays(GLenum mode, int first, int count);
     void DrawIndexedArrays(GLenum primType,

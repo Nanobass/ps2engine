@@ -103,7 +103,7 @@ void CImmDrawContext::SetDrawBuffers(bool interlaced,
     // projection xform
 
     // -1 here flips mapping to: far_clip -> -1, near_clip -> 1
-    GSScale.set_scale(cpu_vec_xyz(width / 2.0f, -1 * height / 2.0f, -1 * (float)maxDepthValue / 2.0f));
+    GSScale.set_scale(pse::math::vec3(width / 2.0f, -1 * height / 2.0f, -1 * (float)maxDepthValue / 2.0f));
     SetVertexXformValid(false);
 
     // clear environment
@@ -161,7 +161,7 @@ void CImmDrawContext::SwapBuffers(bool fieldIsEven)
     }
 }
 
-const cpu_mat_44&
+const pse::math::mat4&
 CImmDrawContext::GetVertexXform()
 {
     if (!IsVertexXformValid) {

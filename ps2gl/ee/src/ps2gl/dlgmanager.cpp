@@ -85,7 +85,7 @@ void CDListGeomManager::BeginGeom(GLenum mode)
     InsideBeginEnd = true;
 }
 
-void CDListGeomManager::Vertex(cpu_vec_xyzw newVert)
+void CDListGeomManager::Vertex(pse::math::vec4 newVert)
 {
     *CurVertexBuf += newVert;
 
@@ -93,10 +93,10 @@ void CDListGeomManager::Vertex(cpu_vec_xyzw newVert)
 }
 
 class CSetNormalCmd : public CDListCmd {
-    cpu_vec_xyz Normal;
+    pse::math::vec3 Normal;
 
 public:
-    CSetNormalCmd(cpu_vec_xyz normal)
+    CSetNormalCmd(pse::math::vec3 normal)
         : Normal(normal)
     {
     }
@@ -107,7 +107,7 @@ public:
     }
 };
 
-void CDListGeomManager::Normal(cpu_vec_xyz normal)
+void CDListGeomManager::Normal(pse::math::vec3 normal)
 {
     if (DoNormalize)
         normal.normalize();
@@ -115,9 +115,9 @@ void CDListGeomManager::Normal(cpu_vec_xyz normal)
     if (InsideBeginEnd) {
         CurNormal = normal;
 
-        *CurNormalBuf += normal(0);
-        *CurNormalBuf += normal(1);
-        *CurNormalBuf += normal(2);
+        *CurNormalBuf += normal.x;
+        *CurNormalBuf += normal.y;
+        *CurNormalBuf += normal.z;
 
         Geometry.AddNormals();
     } else {
@@ -130,10 +130,10 @@ void CDListGeomManager::Normal(cpu_vec_xyz normal)
 }
 
 class CColorCmd : public CDListCmd {
-    cpu_vec_xyzw CurColor;
+    pse::math::vec4 CurColor;
 
 public:
-    CColorCmd(cpu_vec_xyzw color)
+    CColorCmd(pse::math::vec4 color)
         : CurColor(color)
     {
     }
@@ -144,7 +144,7 @@ public:
     }
 };
 
-void CDListGeomManager::Color(cpu_vec_xyzw color)
+void CDListGeomManager::Color(pse::math::vec4 color)
 {
     if (InsideBeginEnd) {
         *CurColorBuf += color;

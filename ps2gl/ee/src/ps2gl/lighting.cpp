@@ -35,8 +35,8 @@ CImmLight::CImmLight(CGLContext& context, int lightNum)
 {
     if (lightNum == 0) {
         // Light0 has different initial values
-        Diffuse  = cpu_vec_xyzw(1.0f, 1.0f, 1.0f, 1.0f);
-        Specular = cpu_vec_xyzw(1.0f, 1.0f, 1.0f, 1.0f);
+        Diffuse  = pse::math::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        Specular = pse::math::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -67,9 +67,9 @@ void CImmLight::SetEnabled(bool enabled)
     }
 }
 
-void CImmLight::SetSpecular(cpu_vec_xyzw specular)
+void CImmLight::SetSpecular(pse::math::vec4 specular)
 {
-    cpu_vec_4 zero(0, 0, 0, 0);
+    pse::math::vec4 zero(0, 0, 0, 0);
     if ((specular == zero) ^ (Specular == zero)) {
         Specular = specular;
         GLContext.GetImmLighting().SpecularChanged();
@@ -79,7 +79,7 @@ void CImmLight::SetSpecular(cpu_vec_xyzw specular)
     TellRendererLightPropChanged();
 }
 
-void CImmLight::SetPosition(cpu_vec_xyzw position)
+void CImmLight::SetPosition(pse::math::vec4 position)
 {
     CImmMatrixStack& modelView = GLContext.GetModelViewStack();
 
@@ -91,7 +91,7 @@ void CImmLight::SetPosition(cpu_vec_xyzw position)
     CheckTypeChange(oldType);
 }
 
-void CImmLight::SetDirection(cpu_vec_xyzw direction)
+void CImmLight::SetDirection(pse::math::vec4 direction)
 {
     CImmMatrixStack& modelView = GLContext.GetModelViewStack();
 
@@ -109,10 +109,10 @@ void CImmLight::SetDirection(cpu_vec_xyzw direction)
 
 class CLightPropCmd : public CDListCmd {
     GLenum LightNum, Property;
-    cpu_vec_xyzw Value;
+    pse::math::vec4 Value;
 
 public:
-    CLightPropCmd(GLenum lightNum, GLenum prop, cpu_vec_xyzw value)
+    CLightPropCmd(GLenum lightNum, GLenum prop, pse::math::vec4 value)
         : LightNum(lightNum)
         , Property(prop)
         , Value(value)
@@ -125,21 +125,21 @@ public:
     }
 };
 
-void CDListLight::SetAmbient(cpu_vec_xyzw ambient)
+void CDListLight::SetAmbient(pse::math::vec4 ambient)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_AMBIENT, ambient);
     TellRendererLightPropChanged();
 }
 
-void CDListLight::SetDiffuse(cpu_vec_xyzw diffuse)
+void CDListLight::SetDiffuse(pse::math::vec4 diffuse)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_DIFFUSE, diffuse);
     TellRendererLightPropChanged();
 }
 
-void CDListLight::SetSpecular(cpu_vec_xyzw specular)
+void CDListLight::SetSpecular(pse::math::vec4 specular)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_SPECULAR, specular);
@@ -147,21 +147,21 @@ void CDListLight::SetSpecular(cpu_vec_xyzw specular)
     GLContext.SpecularEnabledChanged(); // maybe
 }
 
-void CDListLight::SetPosition(cpu_vec_xyzw position)
+void CDListLight::SetPosition(pse::math::vec4 position)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_POSITION, position);
     TellRendererLightPropChanged();
 }
 
-void CDListLight::SetDirection(cpu_vec_xyzw direction)
+void CDListLight::SetDirection(pse::math::vec4 direction)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_POSITION, direction);
     TellRendererLightPropChanged();
 }
 
-void CDListLight::SetSpotDirection(cpu_vec_xyzw dir)
+void CDListLight::SetSpotDirection(pse::math::vec4 dir)
 {
     GLContext.GetDListManager().GetOpenDList()
         += CLightPropCmd(GL_LIGHT0 | LightNum, GL_SPOT_DIRECTION, dir);
@@ -171,35 +171,35 @@ void CDListLight::SetSpotDirection(cpu_vec_xyzw dir)
 void CDListLight::SetSpotCutoff(float cutoff)
 {
     GLContext.GetDListManager().GetOpenDList()
-        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_SPOT_CUTOFF, cpu_vec_xyzw(cutoff, 0, 0, 0));
+        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_SPOT_CUTOFF, pse::math::vec4(cutoff, 0, 0, 0));
     TellRendererLightPropChanged();
 }
 
 void CDListLight::SetSpotExponent(float exp)
 {
     GLContext.GetDListManager().GetOpenDList()
-        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_AMBIENT, cpu_vec_xyzw(exp, 0, 0, 0));
+        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_AMBIENT, pse::math::vec4(exp, 0, 0, 0));
     TellRendererLightPropChanged();
 }
 
 void CDListLight::SetConstantAtten(float atten)
 {
     GLContext.GetDListManager().GetOpenDList()
-        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_CONSTANT_ATTENUATION, cpu_vec_xyzw(atten, 0, 0, 0));
+        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_CONSTANT_ATTENUATION, pse::math::vec4(atten, 0, 0, 0));
     TellRendererLightPropChanged();
 }
 
 void CDListLight::SetLinearAtten(float atten)
 {
     GLContext.GetDListManager().GetOpenDList()
-        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_LINEAR_ATTENUATION, cpu_vec_xyzw(atten, 0, 0, 0));
+        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_LINEAR_ATTENUATION, pse::math::vec4(atten, 0, 0, 0));
     TellRendererLightPropChanged();
 }
 
 void CDListLight::SetQuadAtten(float atten)
 {
     GLContext.GetDListManager().GetOpenDList()
-        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_QUADRATIC_ATTENUATION, cpu_vec_xyzw(atten, 0, 0, 0));
+        += CLightPropCmd(GL_LIGHT0 | LightNum, GL_QUADRATIC_ATTENUATION, pse::math::vec4(atten, 0, 0, 0));
     TellRendererLightPropChanged();
 }
 
@@ -242,7 +242,7 @@ CImmLighting::CImmLighting(CGLContext& context)
 void CImmLighting::SpecularChanged()
 {
     int count = 0;
-    cpu_vec_4 zero(0, 0, 0, 0);
+    pse::math::vec4 zero(0, 0, 0, 0);
     for (int i = 0; i < 8; i++)
         if (Lights[i]->IsEnabled() && Lights[i]->GetSpecular() != zero)
             count++;
@@ -306,10 +306,10 @@ void CDListLighting::SetLightingEnabled(bool enabled)
 }
 
 class CSetGlobalAmbientCmd : public CDListCmd {
-    cpu_vec_xyzw Ambient;
+    pse::math::vec4 Ambient;
 
 public:
-    CSetGlobalAmbientCmd(cpu_vec_xyzw newAmb)
+    CSetGlobalAmbientCmd(pse::math::vec4 newAmb)
         : Ambient(newAmb)
     {
     }
@@ -320,7 +320,7 @@ public:
     }
 };
 
-void CDListLighting::SetGlobalAmbient(cpu_vec_xyzw newAmb)
+void CDListLighting::SetGlobalAmbient(pse::math::vec4 newAmb)
 {
     GLContext.GetDListManager().GetOpenDList() += CSetGlobalAmbientCmd(newAmb);
     TellRendererLightPropChanged();
@@ -332,7 +332,7 @@ void CDListLighting::SetGlobalAmbient(cpu_vec_xyzw newAmb)
 
 void setPosition(CLight& light, float x, float y, float z, float w)
 {
-    cpu_vec_xyzw pos(x, y, z, w);
+    pse::math::vec4 pos(x, y, z, w);
     if (w == 0.0f)
         light.SetDirection(pos);
     else
@@ -350,19 +350,19 @@ void glLightfv(GLenum lightNum,
 
     switch (pname) {
     case GL_AMBIENT:
-        light.SetAmbient(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+        light.SetAmbient(pse::math::vec4(params[0], params[1], params[2], params[3]));
         break;
     case GL_DIFFUSE:
-        light.SetDiffuse(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+        light.SetDiffuse(pse::math::vec4(params[0], params[1], params[2], params[3]));
         break;
     case GL_SPECULAR:
-        light.SetSpecular(cpu_vec_xyzw(params[0], params[1], params[2], params[3]));
+        light.SetSpecular(pse::math::vec4(params[0], params[1], params[2], params[3]));
         break;
     case GL_POSITION:
         setPosition(light, params[0], params[1], params[2], params[3]);
         break;
     case GL_SPOT_DIRECTION:
-        light.SetPosition(cpu_vec_xyzw(params[0], params[1], params[2], 0.0f).normalize());
+        light.SetPosition(pse::math::vec4(params[0], params[1], params[2], 0.0f).normalize());
         break;
     case GL_SPOT_EXPONENT:
         light.SetSpotExponent(*params);
@@ -418,7 +418,7 @@ void glLightModelfv(GLenum pname, const GLfloat* params)
 
     switch (pname) {
     case GL_LIGHT_MODEL_AMBIENT:
-        pGLContext->GetLighting().SetGlobalAmbient(cpu_vec_xyzw(params[0],
+        pGLContext->GetLighting().SetGlobalAmbient(pse::math::vec4(params[0],
             params[1],
             params[2],
             params[3]));

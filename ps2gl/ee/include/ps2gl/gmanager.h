@@ -8,8 +8,7 @@
 #define ps2gl_gmanager_h
 
 #include "GL/gl.h"
-#include "ps2s/cpu_matrix.h"
-#include "ps2s/cpu_vector.h"
+#include <ps2math.hpp>
 #include "ps2s/gs.h"
 #include "ps2s/packet.h"
 
@@ -104,7 +103,7 @@ protected:
     static tUserPrimEntry UserPrimTypes[kMaxUserPrimTypes];
 
     // GL state
-    cpu_vec_xyz CurNormal;
+    pse::math::vec3 CurNormal;
     float CurTexCoord[2];
     static bool DoNormalize;
 
@@ -168,8 +167,8 @@ public:
 
     // GL state
 
-    inline cpu_vec_xyz GetCurNormal() const { return CurNormal; }
-    inline void SetCurNormal(cpu_vec_xyz normal) { CurNormal = normal; }
+    inline pse::math::vec3 GetCurNormal() const { return CurNormal; }
+    inline void SetCurNormal(pse::math::vec3 normal) { CurNormal = normal; }
 
     inline const float* GetCurTexCoord() const { return CurTexCoord; }
     inline void SetCurTexCoord(float u, float v)
@@ -191,10 +190,10 @@ public:
     // rendering interface
 
     virtual void BeginGeom(GLenum mode)       = 0;
-    virtual void Vertex(cpu_vec_xyzw newVert) = 0;
-    virtual void Normal(cpu_vec_xyz normal)   = 0;
+    virtual void Vertex(pse::math::vec4 newVert) = 0;
+    virtual void Normal(pse::math::vec3 normal)   = 0;
     virtual void TexCoord(float u, float v) = 0;
-    virtual void Color(cpu_vec_xyzw color) = 0;
+    virtual void Color(pse::math::vec4 color) = 0;
     virtual void EndGeom()                 = 0;
     virtual void DrawArrays(GLenum mode, int first, int count) = 0;
     virtual void DrawIndexedArrays(GLenum primType,
