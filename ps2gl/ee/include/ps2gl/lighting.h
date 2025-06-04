@@ -9,9 +9,9 @@
 
 #include "GL/gl.h"
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
-#include "ps2gl/debug.h"
+#include <core/log.hpp>
 #include "ps2gl/dlgmanager.h"
 #include "ps2gl/glcontext.h"
 #include "ps2gl/immgmanager.h"

@@ -9,7 +9,7 @@
 
 #include "ps2gl/renderer.h"
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include "ps2s/gs.h"
 
 /********************************************

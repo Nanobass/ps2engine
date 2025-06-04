@@ -33,13 +33,13 @@
 //========================================
 
 /* ps2memory */
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
 
 /* ps2glu */
 #include <ps2glu.hpp>
 
 /* ps2math */
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
 namespace pse
 {

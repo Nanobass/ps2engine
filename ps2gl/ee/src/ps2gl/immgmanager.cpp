@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include "ps2s/displayenv.h"
 #include "ps2s/math.h"
 #include "ps2s/packet.h"

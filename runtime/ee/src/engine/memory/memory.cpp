@@ -32,7 +32,7 @@ namespace pse
 
 void exit_handler()
 {
-    std::cout << "system exit" << std::endl;
+    pse::log::out(pse::log::kError) << "system exit" << std::endl;
     memory::print_statistics();
     memory::terminate();
     g_MemorySystemInitialized = false;
@@ -40,14 +40,15 @@ void exit_handler()
 
 void crash_handler()
 {
-    std::cout << "system crash" << std::endl;
+    pse::log::out(pse::log::kError) << "system crash" << std::endl;
     memory::print_statistics();
-    std::cout << "pausing thread" << std::endl;
+    pse::log::out(pse::log::kError) << "pausing thread" << std::endl;
     SleepThread();
 }
 
 void initialize_memory_system() 
 {
+    if(g_MemorySystemInitialized) return;
     memory::initialize();
     memory::register_douglea_allocator(GME_FAST, memory::PSE_ALLOCATOR_DEFAULT, "Fast", 1024 * 1024 * 2);
     g_MemorySystemInitialized = true;
@@ -57,10 +58,27 @@ void initialize_memory_system()
 
 } // namespace pse
 
+bool g_MemorySystemSafety = false;
+
+bool check_memory_system()
+{
+    if(g_MemorySystemSafety)
+    {
+        printf("memory system fallback\n");
+        return false;
+    }
+    if(!pse::g_MemorySystemInitialized)
+    {
+        g_MemorySystemSafety = true;
+        pse::initialize_memory_system();
+        g_MemorySystemSafety = false;
+    }
+    return true;
+}
 
 void* operator new(size_t size) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(pse::memory::get_current_allocator(), size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -68,7 +86,7 @@ void* operator new(size_t size)
 
 void* operator new(size_t size, std::align_val_t align) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(pse::memory::get_current_allocator(), size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -76,7 +94,7 @@ void* operator new(size_t size, std::align_val_t align)
 
 void* operator new[](size_t size) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(pse::memory::get_current_allocator(), size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -84,7 +102,7 @@ void* operator new[](size_t size)
 
 void* operator new[](size_t size, std::align_val_t align) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(pse::memory::get_current_allocator(), size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -93,7 +111,7 @@ void* operator new[](size_t size, std::align_val_t align)
 
 void* operator new(size_t size, const pse::memory::allocator_id& alloc) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(alloc, size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -101,7 +119,7 @@ void* operator new(size_t size, const pse::memory::allocator_id& alloc)
 
 void* operator new[](size_t size, const pse::memory::allocator_id& alloc) 
 {
-    if(!pse::g_MemorySystemInitialized) pse::initialize_memory_system();
+    if(!check_memory_system()) return std::malloc(size);
     void* ptr = pse::memory::allocate(alloc, size);
     if (!ptr) throw std::bad_alloc();
     return ptr;
@@ -109,10 +127,20 @@ void* operator new[](size_t size, const pse::memory::allocator_id& alloc)
 
 void operator delete(void* ptr) noexcept 
 {
+    if(!check_memory_system())
+    {
+        std::free(ptr);
+        return;
+    }
     pse::memory::deallocate(ptr);
 }
 
 void operator delete[](void* ptr) noexcept 
 {
+    if(!check_memory_system())
+    {
+        std::free(ptr);
+        return;
+    }
     pse::memory::deallocate(ptr);
 }

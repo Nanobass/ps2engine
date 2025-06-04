@@ -7,8 +7,8 @@
 #ifndef ps2gl_matrix_h
 #define ps2gl_matrix_h
 
-#include "ps2gl/debug.h"
-#include <ps2math.hpp>
+#include <core/log.hpp>
+#include <core/math.hpp>
 
 #include "ps2gl/drawcontext.h"
 #include "ps2gl/glcontext.h"

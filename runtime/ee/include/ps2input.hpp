@@ -18,7 +18,7 @@
 //========================================
 
 #include <cinttypes>
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include <libpad.h>
 
 //========================================

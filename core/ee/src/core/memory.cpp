@@ -11,11 +11,13 @@
 //
 //=============================================================================
 
-#include <ps2heap.hpp>
+#include <core/memory.hpp>
 
 //========================================
 // System Includes
 //========================================
+
+#include <kernel.h>
 
 //========================================
 // Project Includes
@@ -25,6 +27,8 @@ extern size_t GetFreeSize(void);
 
 namespace pse::memory
 {
+
+bool g_MemoryFoundationInitialized = false;
 
 const int g_MaxAllocators = 16;
 allocator* g_Allocators[g_MaxAllocators] = { nullptr };
@@ -68,25 +72,28 @@ void track_memory(const char* action, size_t size, allocator* alloc)
     {
         if(g_TrackingName)
         {
-            std::cout << "memory: " << action << " " << size << " bytes on " << alloc->get_name() << " (" << g_TrackingName << ")" << std::endl;
+            log::out(log::kDebug) << g_TrackingName << ": " << action << " " << size << " bytes on " << alloc->get_name() << std::endl;
         }
         else
         {
-            std::cout << "memory: " << action << " " << size << " bytes on " << alloc->get_name() << std::endl;
+            log::out(log::kDebug) << action << " " << size << " bytes on " << alloc->get_name() << std::endl;
         }
     }
 }
 
 void initialize()
 {
+    if(g_MemoryFoundationInitialized) throw std::runtime_error("memory system already initialized");
     register_allocator(PSE_ALLOCATOR_DEFAULT, &g_DefaultAllocatorInstance);
     set_default_allocator(PSE_ALLOCATOR_DEFAULT);
     push_allocator(PSE_ALLOCATOR_DEFAULT);
-    std::cout << "memory: free memory at startup: " << get_total_free_memory() / 1024 << " KBytes" << std::endl;
+    pse::log::initialize();
+    g_MemoryFoundationInitialized = true;
 }
 
 void terminate()
 {
+    g_MemoryFoundationInitialized = false;
     unregister_allocator(PSE_ALLOCATOR_DEFAULT);
 }
 
@@ -103,6 +110,11 @@ void* allocate(allocator_id alloc, size_t size)
     size_t actual_size = allocator_ptr->get_allocation_size(ptr);
     track_memory("allocated", actual_size, allocator_ptr);
     return ptr;
+}
+
+void* allocate(size_t size)
+{
+    return allocate(get_current_allocator(), size);
 }
 
 void deallocate(allocator_id alloc, void* ptr)
@@ -141,7 +153,7 @@ allocator_id find_allocator(void* ptr)
     {
         if (g_Allocators[i] && g_Allocators[i]->allocated(ptr)) return static_cast<allocator_id>(i);
     }
-    // unknown memory must have been mallocated by the system
+    // unknown memory must have been malloc't by the system
     return PSE_ALLOCATOR_DEFAULT;
 }
 
@@ -195,8 +207,8 @@ void set_tracking(bool enabled, size_t threshold, const char* name)
     g_TrackingEnabled = enabled;
     g_TrackingThreshold = threshold;
     g_TrackingName = name;
-    if (enabled) std::cout << "memory: tracking enabled with threshold: " << threshold << " bytes" << std::endl;
-    else std::cout << "memory: tracking disabled" << std::endl;
+    if (enabled) log::out(log::kDebug) << "tracking enabled with threshold: " << threshold << " bytes" << std::endl;
+    else log::out(log::kDebug) << "tracking disabled" << std::endl;
 }
 
 void print_statistics()
@@ -205,17 +217,17 @@ void print_statistics()
     size_t largest_block = 0;
     size_t number_of_allocations = 0;
     size_t peak_usage = 0;
-    std::cout << "memory: statistics" << std::endl;
+    std::ostream& os = log::out(log::kDebug) << "statistics" << std::endl;
     for (int i = 0; i < g_MaxAllocators; ++i)
     {
         if (g_Allocators[i])
         {
             g_Allocators[i]->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
-            std::cout << "  allocator " << g_Allocators[i]->get_name() << " (" << i << "): "  << std::endl
-                      << "    total free memory: " << total_free_memory / 1024 << " kbytes"  << std::endl
-                      << "    largest block: " << largest_block / 1024 << " kbytes"  << std::endl
-                      << "    number of allocations: " << number_of_allocations  << std::endl
-                      << "    peak usage: " << peak_usage / 1024 << " kbytes" << std::endl;
+            os << "  allocator " << g_Allocators[i]->get_name() << " (" << i << "): "  << std::endl;
+            os << "    total free memory: " << total_free_memory / 1024 << " kbytes"  << std::endl;
+            os << "    largest block: " << largest_block / 1024 << " kbytes"  << std::endl;
+            os << "    number of allocations: " << number_of_allocations  << std::endl;
+            os << "    peak usage: " << peak_usage / 1024 << " kbytes" << std::endl;
         }
     }
 }
@@ -249,7 +261,7 @@ void out_of_memory_callback(allocator_id alloc, size_t size)
     if (g_OutOfMemoryCallback) g_OutOfMemoryCallback(alloc, size, g_OutOfMemoryCallbackArgs);
     else
     {
-        std::cout << "out of memory in allocator " << alloc << " requested size " << size << std::endl;
+        log::out(log::kDebug) << "out of memory in allocator " << alloc << " requested size " << size << std::endl;
         print_statistics();
         throw std::runtime_error("out of memory");
     }
@@ -290,6 +302,21 @@ void register_douglea_allocator(allocator_id id, allocator_id parent, const char
     check_allocator_id(id);
     allocator* allocator = new(allocate(parent, sizeof(douglea_allocator))) douglea_allocator(id, parent, name, size);
     register_allocator(id, allocator);
+}
+
+uint32_t joaat(const std::string& str)
+{
+	uint32_t hash = 0;
+	for (const char c : str)
+	{
+		hash += c;
+		hash += (hash << 10);
+		hash ^= (hash >> 6);
+	}
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
+	return hash;
 }
 
 } // namespace pse::memory

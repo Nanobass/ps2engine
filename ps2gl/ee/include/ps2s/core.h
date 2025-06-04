@@ -9,7 +9,7 @@
 
 //  #include "eetypes.h"
 //  #include "eestruct.h"
-#include "ps2s/debug.h"
+#include <core/log.hpp>
 #include "ps2s/types.h"
 
 namespace Core {

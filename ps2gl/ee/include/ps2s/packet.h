@@ -22,6 +22,8 @@
 #include "ps2s/core.h"
 #include "ps2s/utils.h"
 
+#include <core/log.hpp>
+
 /********************************************
  * constants
  */

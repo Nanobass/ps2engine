@@ -25,7 +25,7 @@
 // Project Includes
 //========================================
 
-#include <ps2heap.hpp>
+#include <core/memory.hpp>
 #include <engine/memory/memory.hpp>
 
 //========================================

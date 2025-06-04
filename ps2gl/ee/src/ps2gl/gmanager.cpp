@@ -8,13 +8,13 @@
 
 #include "GL/ps2gl.h"
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include "ps2s/displayenv.h"
 #include "ps2s/math.h"
 #include "ps2s/packet.h"
 
 #include "ps2gl/clear.h"
-#include "ps2gl/debug.h"
+#include <core/log.hpp>
 #include "ps2gl/dlist.h"
 #include "ps2gl/glcontext.h"
 #include "ps2gl/gmanager.h"

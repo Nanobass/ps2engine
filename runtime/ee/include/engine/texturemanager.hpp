@@ -36,13 +36,14 @@
 //========================================
 
 /* ps2memory */
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
 
 /* ps2glu */
 #include <ps2glu.hpp>
 
 /* ps2math */
-#include <ps2math.hpp>
+#include <core/math.hpp>
+#include <core/log.hpp>
 
 
 namespace pse
@@ -54,6 +55,12 @@ namespace PS2
 void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type);
     
 } // namespace PS2
+
+inline bool ends_with(std::string const & value, std::string const & ending)
+{
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
 
 struct TextureBuffer
 {
@@ -108,7 +115,7 @@ struct Texture
         mCore = new TextureBuffer(std::move(core));
         glGenTextures(1, &mGLName);
         Upload();
-        operator<<(std::cout << "Texture Created: ") << std::endl;
+        operator<<(log::out(log::kInfo) << "Texture Created: ") << std::endl;
     }
 
     Texture(memory::name name, TextureBuffer core, TextureBuffer clut) : mName(name)
@@ -117,12 +124,12 @@ struct Texture
         mClutBuffer = new TextureBuffer(std::move(clut));
         glGenTextures(1, &mGLName);
         Upload();
-        operator<<(std::cout << "Texture Created: ") << std::endl;
+        operator<<(log::out(log::kInfo) << "Texture Created: ") << std::endl;
     }
 
     virtual ~Texture()
     {
-        operator<<(std::cout << "Texture Deleted: ") << std::endl;
+        operator<<(log::out(log::kInfo) << "Texture Deleted: ") << std::endl;
         if(mCore) delete mCore;
         if(mClutBuffer) delete mClutBuffer;
         if(mGLName != 0) glDeleteTextures(1, &mGLName);
@@ -185,7 +192,7 @@ struct TextureManager
 
     TextureManager(uint32_t vramStart, uint32_t vramEnd)
     {
-        std::cout << "Initializing TextureManager: vramStart=" << vramStart << ", vramEnd=" << vramEnd << std::endl;
+        log::out(log::kInfo) << "Initializing TextureManager: vramStart=" << vramStart << ", vramEnd=" << vramEnd << std::endl;
         InitializeGsMemory(vramStart, vramEnd);
         
         glEnable(GL_TEXTURE_2D);

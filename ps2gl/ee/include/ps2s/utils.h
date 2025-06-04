@@ -7,7 +7,7 @@
 #ifndef ps2s_utils_h
 #define ps2s_utils_h
 
-#include "ps2s/debug.h"
+#include <core/log.hpp>
 #include "ps2s/types.h"
 #include <stdio.h>
 

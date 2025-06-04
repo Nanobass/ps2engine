@@ -23,7 +23,7 @@
 
 #include <engine/texturemanager.hpp>
 
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
 
 namespace pse
 {

@@ -8,7 +8,7 @@
 
 #include "GL/ps2gl.h"
 
-#include "ps2gl/debug.h"
+#include <core/log.hpp>
 #include "ps2gl/dlgmanager.h"
 #include "ps2gl/dlist.h"
 #include "ps2gl/glcontext.h"

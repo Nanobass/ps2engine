@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include "GL/gl.h"
-#include "ps2gl/debug.h"
+#include <core/log.hpp>
 
 /********************************************
  * CGeometryBlock

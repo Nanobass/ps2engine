@@ -34,7 +34,7 @@
 // Project Includes
 //========================================
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
 namespace pse
 {

@@ -11,7 +11,7 @@
  * includes
  */
 
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
 #include "ps2gl/glcontext.h"
 #include "ps2gl/immgmanager.h"
@@ -190,7 +190,7 @@ public:
     void SetInterlacingOffset(float yPixels);
     void SetDepthWriteEnabled(bool enabled);
     void SetFrameBufferDrawMask(unsigned int mask);
-    void SetPolygonMode(GLenum mode) { assert(false); }
+    void SetPolygonMode(GLenum mode) { mAssert(false); }
 
     void SetDrawBuffers(bool interlaced,
         GS::CMemArea* frame0Mem, GS::CMemArea* frame1Mem,

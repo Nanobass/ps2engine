@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "GL/gl.h"
-#include "ps2gl/debug.h"
+#include <core/log.hpp>
 #include "ps2s/packet.h"
 
 /********************************************
@@ -55,6 +55,7 @@ class CEmptyListCmd : public CDListCmd {
 public:
     CDListCmd* Play()
     {
+        pse::log::out(pse::log::kError) << "Trying to play an empty list!" << std::endl;
         mError("Trying to play an empty list!");
         return NULL;
     }

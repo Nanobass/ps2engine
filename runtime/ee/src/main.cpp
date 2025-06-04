@@ -49,22 +49,31 @@
 // Project Includes
 //========================================
 
+#include <core/log.hpp>
+
 #include <engine/memory/memory.hpp>
 #include <engine/memory/metrics.hpp>
 
+#include <engine/renderer.hpp>
+#include <engine/renderer/font.hpp>
+#include <engine/renderer/skybox.hpp>
+#include <engine/renderer/basic.hpp>
+
 #include <ps2glu.hpp>
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include <ps2pad.hpp>
 
-#include <singletons.hpp>
-
-#include <terrain.hpp>
-#include <noise.h>
+std::unique_ptr<pse::RenderManager> g_RenderManager = nullptr;
+std::unique_ptr<pse::TextRenderer> g_TextRenderer = nullptr;
+std::unique_ptr<pse::SkyboxRenderer> g_SkyboxRenderer = nullptr;
+std::unique_ptr<pse::BasicRenderer> g_BasicRenderer = nullptr;
+std::unique_ptr<pse::OrthographicCamera> g_HudCamera = nullptr;
+pse::Font* g_DefaultFont = nullptr;
 
 int main(int argc, char const *argv[]) 
 {
     pse::initialize_memory_system();
-    pse::memory::set_tracking(true, 0);
+    pse::memory::set_tracking(true, 0, "initialiation");
 
     SifLoadModule("host0:/irx/sio2man.irx", 0, NULL);
     SifLoadModule("host0:/irx/padman.irx", 0, NULL);
@@ -98,28 +107,6 @@ int main(int argc, char const *argv[])
     pse::Material* material = new pse::Material();
     g_RenderManager->mLightingManager->SetMaterial(material);
 
-    pse::memory::set_tracking(true, 0, "Terrain Generation");
-
-    CTerrain* terrain = new CTerrain();
-
-    for(int i = 0; i < 1; i++)
-    {
-        for(int j = 0; j < 1; j++)
-        {
-            for(int k = 0; k < 1; k++)
-            {
-                makeChunk(terrain, i, j, k);
-            }
-        }
-    }
-
-    pse::memory::set_tracking(true, 0, "Terrain Mesh Generation");
-
-    for(auto& chunk : terrain->chunks())
-    {
-        chunk.GenerateMesh();
-    }
-
     pse::memory::set_tracking(false);
     do {
         pad.Poll();
@@ -152,12 +139,6 @@ int main(int argc, char const *argv[])
         g_RenderManager->BeginFrame();
         g_SkyboxRenderer->RenderSky(camera);
         g_RenderManager->mLightingManager->DoLighting(camera);
-
-        camera.Apply();
-        for(auto& chunk : terrain->chunks())
-        {
-            glCallList(chunk.mesh().mList);
-        }
 
         g_HudCamera->Apply();
         glPushMatrix();

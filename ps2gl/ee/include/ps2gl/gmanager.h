@@ -8,7 +8,7 @@
 #define ps2gl_gmanager_h
 
 #include "GL/gl.h"
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include "ps2s/gs.h"
 #include "ps2s/packet.h"
 

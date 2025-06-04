@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "ps2s/debug.h"
+#include <core/log.hpp>
 #include "ps2s/gsmem.h"
 #include "ps2s/math.h"
 
@@ -45,7 +45,7 @@ void CMemSlot::Unbind()
 
 #define mCase(_psm) \
     case _psm:      \
-        return std::string(mExpandQuote(_psm));
+        return std::string(#_psm);
 
 std::string
 GetPSMString(GS::tPSM psm)

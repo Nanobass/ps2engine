@@ -33,7 +33,7 @@
 //========================================
 
 /* ps2math */
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
 namespace ps2
 {
@@ -81,10 +81,4 @@ inline void gluLookAt(pse::math::vec4 position, pse::math::vec4 target, pse::mat
 {
     pse::math::mat4 view = pse::math::lookAt(position, target, up);
     gluMultMatrix(view);
-}
-
-inline bool ends_with(std::string const & value, std::string const & ending)
-{
-    if (ending.size() > value.size()) return false;
-    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }

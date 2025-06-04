@@ -42,13 +42,14 @@
 #include <engine/camera.hpp>
 
 /* ps2memory */
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
 
 /* ps2glu */
 #include <ps2glu.hpp>
 
 /* ps2math */
-#include <ps2math.hpp>
+#include <core/math.hpp>
+#include <core/log.hpp>
 
 namespace pse
 {
@@ -68,7 +69,7 @@ struct RenderManager {
      */
     RenderManager(size_t immediateVertexBufferSize = 4 * 1024, size_t immediateDmaPacketSize = 128)
     {
-        std::cout << "Initializing PS2GL" << std::endl;
+        log::out(log::kInfo) << "Initializing PS2GL" << std::endl;
         *(GIF::Registers::ctrl) = 1; // OSDSYS leaves path 3 busy, so fix that
     	SetGsCrt(1 /* interlaced */, 2 /* ntsc */, 1 /* frame */);
         pglInit(immediateVertexBufferSize, immediateDmaPacketSize);
@@ -77,7 +78,7 @@ struct RenderManager {
         mHeight = 224;
         mAspectRatio = ps2::GetSystemAspectRatio();
 
-        std::cout << "Initializing Buffers: NTSC, Double-Buffered, Interlaced, " << mWidth << "x" << mHeight << ", AspectRatio=" << mAspectRatio << std::endl;
+        log::out(log::kInfo) << "Initializing Buffers: NTSC, Double-Buffered, Interlaced, " << mWidth << "x" << mHeight << ", AspectRatio=" << mAspectRatio << std::endl;
         pgl_slot_handle_t frame_slot_0 = pglAddGsMemSlot(  0, 80, GS_PSM_24);
         pgl_area_handle_t frame_area_0 = pglCreateGsMemArea(mWidth, mHeight, GS_PSM_24);
         pglLockGsMemSlot(frame_slot_0);

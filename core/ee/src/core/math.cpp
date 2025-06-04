@@ -1,4 +1,4 @@
-#include <ps2math.hpp>
+#include <core/math.hpp>
 #include <math3d.h>
 
 extern volatile const u32 PS2MATH_ATAN_TABLE[9] alignas(sizeof(float)) = {
@@ -856,8 +856,6 @@ vec4 operator*(const vec4& vector, const mat4& matrix)
 
 std::ostream& operator<<(std::ostream& os, const mat4& matrix)
 {
-    os << std::fixed;
-    os << std::setprecision(2);
     for (int i = 0; i < 4; ++i) 
         for (int j = 0; j < 4; ++j) 
         {

@@ -37,17 +37,19 @@
 //========================================
 
 /* ps2memory */
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
 
 /* ps2glu */
 #include <ps2glu.hpp>
 
 /* ps2math */
-#include <ps2math.hpp>
+#include <core/math.hpp>
 
 /* engine */
 #include <engine/texturemanager.hpp>
 #include <engine/camera.hpp>
+
+#include <core/log.hpp>
 
 namespace pse
 {
@@ -143,7 +145,7 @@ struct LightingManager
 
     LightingManager()
     {
-        std::cout << "Initializing LightingManager: NumberOfLights=" << mLights.size() << std::endl;
+        log::out(log::kInfo) << "Initializing LightingManager: NumberOfLights=" << mLights.size() << std::endl;
     }
 
     LightingMode GetLightingMode() { return mLightingMode; }

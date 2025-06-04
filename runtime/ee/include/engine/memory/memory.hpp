@@ -21,8 +21,8 @@
 // Project Includes
 //========================================
 
-#include <ps2heap.hpp>
-#include <ps2memory.hpp>
+#include <core/memory.hpp>
+#include <core/memory.hpp>
 
 namespace pse
 {
