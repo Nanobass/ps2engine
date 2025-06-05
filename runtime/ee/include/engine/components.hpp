@@ -30,6 +30,8 @@
 #include <core/math.hpp>
 #include <core/memory.hpp>
 
+#include <engine/camera.hpp>
+
 namespace pse
 {
 
@@ -63,6 +65,23 @@ struct transform_component
     {
         return pse::math::transformation(mTranslation, mRotation, mScale);
     }
+};
+
+enum camera_mode
+{
+    kOrthographic, kPerspective
+};
+
+struct camera_component
+{
+
+    bool primary = false;
+    camera_mode mode = kPerspective;
+    orthographic_camera orthographic = orthographic_camera(1.0F, 1.0F, 1.0F);
+    perspective_camera perspective = perspective_camera(90.0F, 1.0F, 4095.0F, 1.0F);
+
+    camera_component() = default;
+    camera_component(const camera_component&) = default;
 };
 
 struct mesh_renderer_component

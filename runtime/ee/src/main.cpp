@@ -96,12 +96,13 @@ int main(int argc, char const *argv[])
     g_DefaultFont = g_TextRenderer->load_font("emotion", "emotion.fnt", "emotion.gs", 32.0F, 39.0F);
 
     g_Scene = new(pse::GME_OBJECT) pse::scene();
+
     pse::game_object gmCamera = g_Scene->create_entity("Camera");
-    pse::game_object gmModel = g_Scene->create_entity("Model");
-    for(int i = 0; i < 32; i++)
-    {
-        g_Scene->create_entity("GameObject");
-    }
+    pse::camera_component& cameraComponent = gmCamera.add_component<pse::camera_component>();
+    cameraComponent.primary = true;
+
+    pse::game_object primaryCamera = g_Scene->get_primary_camera_entity();
+    pse::log::out(pse::log::kInfo) << primaryCamera.get_name() << std::endl;
     
     g_SkyboxRenderer->load_skybox("sky.gs");
     g_SkyboxRenderer->mSunLight->mDiffuse = pse::math::color(1.0F, 1.0F, 1.0F);

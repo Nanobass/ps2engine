@@ -80,5 +80,18 @@ game_object scene::get_entity_by_uuid(pse::uuid uuid)
         return { mEntityMap.at(uuid), this };
     return {};
 }
+
+game_object scene::get_primary_camera_entity()
+{
+    auto view = mRegistry.view<camera_component>();
+    for (auto entity : view)
+    {
+        const auto& camera = view.get<camera_component>(entity);
+        if (camera.primary)
+            return game_object{entity, this};
+    }
+    return {};
+}
+
     
 } // namespace pse
