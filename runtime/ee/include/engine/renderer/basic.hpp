@@ -30,9 +30,9 @@ namespace pse
 
 struct BasicRenderer
 {
-    TextureManager* mTextureManager;
+    texture_manager* mTextureManager;
 
-    BasicRenderer(TextureManager* textureManager) 
+    BasicRenderer(texture_manager* textureManager) 
         :   mTextureManager(textureManager) 
     {}
 
@@ -54,8 +54,8 @@ struct BasicRenderer
     void DrawArc(float x, float y, float width, float height, float angle1, float angle2, const pse::math::color& color);
     void FillArc(float x, float y, float width, float height, float angle1, float angle2, const pse::math::color& color);
 
-    void DrawImage(float x, float y, float width, float height, pse::Texture* image, const pse::math::color& color = pse::math::color());
-    void DrawImageRotated(float x, float y, float width, float height, float angle, pse::Texture* image, const pse::math::color& color = pse::math::color());
+    void DrawImage(float x, float y, float width, float height, pse::texture* image, const pse::math::color& color = pse::math::color());
+    void DrawImageRotated(float x, float y, float width, float height, float angle, pse::texture* image, const pse::math::color& color = pse::math::color());
 
 };
     

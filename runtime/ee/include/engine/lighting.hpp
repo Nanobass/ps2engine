@@ -18,75 +18,61 @@
 //========================================
 
 /* standard library */
-#include <memory>
-#include <map>
-#include <cassert>
-#include <fstream>
-#include <iostream>
 #include <array>
-
-/* ps2gl */
-#include <GL/ps2gl.h>
-#include <GL/gl.h>
-
-/* ps2stuff */
-#include <ps2s/gs.h>
 
 //========================================
 // Project Includes
 //========================================
 
-/* ps2memory */
-#include <core/memory.hpp>
+/* ps2gl */
+#include <GL/gl.h>
+#include <GL/ps2gl.h>
+#include <GL/ps2glu.hpp>
 
-/* ps2glu */
-#include <ps2glu.hpp>
-
-/* ps2math */
+/* core */
+#include <core/log.hpp>
 #include <core/math.hpp>
 
 /* engine */
-#include <engine/texturemanager.hpp>
 #include <engine/camera.hpp>
-
-#include <core/log.hpp>
+#include <engine/texturemanager.hpp>
 
 namespace pse
 {
 
-struct Light
+struct light
 {
-    Light(GLenum glLightIndex) : mGLLightIndex(glLightIndex), mAllocated(false) {}
+    light(GLenum glLightIndex) : mGLLightIndex(glLightIndex), mAllocated(false) {}
 
     GLenum mGLLightIndex;
     bool mAllocated, mLocked, mEnabled;
     union
     {
-        pse::math::vec4 mPosition;
-        pse::math::vec4 mDirection;
+        math::vec4 mPosition;
+        math::vec4 mDirection;
     };
-    pse::math::color mAmbient, mDiffuse, mSpecular;
+    math::color mAmbient, mDiffuse, mSpecular;
     
-    bool IsEnabled() { return mEnabled; }
-    void SetEnabled(bool enable)
+    bool is_enabled() { return mEnabled; }
+    void set_enabled(bool enable)
     {
         if(enable) glEnable(mGLLightIndex);
         else glDisable(mGLLightIndex);
         mEnabled = enable;
     }
 
-    bool IsFree() { return !mAllocated && !mLocked; }
-    void Free(bool force = false) 
+    bool is_free() { return !mAllocated && !mLocked; }
+    void free(bool force = false) 
     { 
         if(!mLocked || force) 
         {
-            SetEnabled(false); 
+            set_enabled(false); 
             mAllocated = false;
             mLocked = false;
         }
     }
     
-    void Apply(PerspectiveCamera& camera)
+    void apply(perspective_camera& camera)
     {
         if(mEnabled) glEnable(mGLLightIndex);
         else glDisable(mGLLightIndex);
@@ -101,21 +87,21 @@ struct Light
 
 };
 
-struct Material
+struct material
 {
-    pse::math::color mAmbient, mDiffuse, mSpecular, mEmission;
+    math::color mAmbient, mDiffuse, mSpecular, mEmission;
     float mShininess;
     GLenum mColorMaterial;
     
-    Material(const pse::math::color& ambient, const pse::math::color& diffuse, const pse::math::color& specular = pse::math::color(1,1,1), const pse::math::color& emission = pse::math::color(0,0,0), float shininess = 0.0F)
+    material(const math::color& ambient, const math::color& diffuse, const math::color& specular = math::color(1,1,1), const math::color& emission = math::color(0,0,0), float shininess = 0.0F)
         : mAmbient(ambient), mDiffuse(diffuse), mSpecular(specular), mEmission(emission), mShininess(0.0F), mColorMaterial(0)
     {}
 
-    Material(const pse::math::color& specular = pse::math::color(1,1,1), const pse::math::color& emission = pse::math::color(0,0,0), float shininess = 0.0F)
+    material(const math::color& specular = math::color(1,1,1), const math::color& emission = math::color(0,0,0), float shininess = 0.0F)
         : mAmbient(0, 0, 0), mDiffuse(0, 0, 0), mSpecular(specular), mEmission(emission), mShininess(shininess), mColorMaterial(GL_DIFFUSE)
     {}
 
-    void Apply()
+    void apply()
     {
         glMaterialfv(GL_FRONT, GL_AMBIENT, mAmbient.vector);
         glMaterialfv(GL_FRONT, GL_DIFFUSE, mDiffuse.vector);
@@ -131,51 +117,51 @@ struct Material
 
 };
 
-enum class LightingMode
+enum class lighting_mode
 {
-    Disabled, Color, Lighting
+    kDisabled, kColor, kLighting
 };
 
-struct LightingManager
+struct lighting_manager
 {
-    LightingMode mLightingMode = LightingMode::Disabled;
-    Material* mCurrentMaterial = nullptr;
-    std::array<Light, 8> mLights { GL_LIGHT0, GL_LIGHT1, GL_LIGHT2, GL_LIGHT3, GL_LIGHT4, GL_LIGHT5, GL_LIGHT6, GL_LIGHT7 };
-    pse::math::color mGlobalAmbient = pse::math::color(0.2F, 0.2F, 0.2F);
+    lighting_mode mLightingMode = lighting_mode::kDisabled;
+    material* mCurrentMaterial = nullptr;
+    std::array<light, 8> mLights { GL_LIGHT0, GL_LIGHT1, GL_LIGHT2, GL_LIGHT3, GL_LIGHT4, GL_LIGHT5, GL_LIGHT6, GL_LIGHT7 };
+    math::color mGlobalAmbient = math::color(0.2F, 0.2F, 0.2F);
 
-    LightingManager()
+    lighting_manager()
     {
-        log::out(log::kInfo) << "Initializing LightingManager: NumberOfLights=" << mLights.size() << std::endl;
+        log::out(log::kInfo) << "initializing lighting manager: number_of_lights=" << mLights.size() << std::endl;
     }
 
-    LightingMode GetLightingMode() { return mLightingMode; }
-    void SetLightingMode(LightingMode mode)
+    lighting_mode get_lighting_mode() { return mLightingMode; }
+    void set_lighting_mode(lighting_mode mode)
     {
         switch(mode)
         {
-        case LightingMode::Disabled:
+        case lighting_mode::kDisabled:
             glDisable(GL_LIGHTING);
         break;
-        case LightingMode::Color:
+        case lighting_mode::kColor:
         break;
-        case LightingMode::Lighting:
+        case lighting_mode::kLighting:
             glEnable(GL_LIGHTING);
         break;
         }
         mLightingMode = mode;
     }
 
-    Material* GetMaterial() { return mCurrentMaterial; }
-    void SetMaterial(Material* material)
+    material* get_material() { return mCurrentMaterial; }
+    void set_material(material* material)
     {
-        if(material) material->Apply();
+        if(material) material->apply();
         mCurrentMaterial = material;
     }
 
-    Light* AllocateLight(bool lock = false)
+    light* allocate_light(bool lock = false)
     {
         for(auto& light : mLights)
-            if(light.IsFree())
+            if(light.is_free())
             {
                 light.mAllocated = true;
                 light.mLocked = lock;
@@ -184,10 +170,10 @@ struct LightingManager
         return nullptr;
     }
 
-    void DoLighting(PerspectiveCamera& camera)
+    void do_lighting(perspective_camera& camera)
     {
         for(auto& light : mLights)
-            light.Apply(camera);
+            light.apply(camera);
     }
 
 };

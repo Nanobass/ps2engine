@@ -20,11 +20,11 @@
 /* libpng */
 #include <png.h>
 
-/* ps2stuff */
-#include <ps2s/gs.h>
-
 /* ps2sdk */
 #include <gs_psm.h>
+
+/* standard library */
+#include <fstream>
 
 //========================================
 // Project Includes
@@ -63,7 +63,7 @@ void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type)
 
 } // namespace PS2
 
-void TextureManager::InitializeGsMemory(uint32_t vramStart, uint32_t vramEnd)
+void texture_manager::initialize_gs_memory(uint32_t vramStart, uint32_t vramEnd)
 {
     // this is a temporary arrangement, later texture pages will dynamically move these boundries
     
@@ -98,7 +98,7 @@ void TextureManager::InitializeGsMemory(uint32_t vramStart, uint32_t vramEnd)
     pglPrintGsMemAllocation();
 }
 
-Texture* TextureManager::LoadGsTexture(const memory::name& name, const std::string& path)
+texture* texture_manager::load_gs_texture(const memory::name& name, const std::string& path)
 {
     std::ifstream resource(path, std::ios_base::in);
     GsTextureHeader header;
@@ -115,7 +115,7 @@ Texture* TextureManager::LoadGsTexture(const memory::name& name, const std::stri
     if(header.mPsm == GS_PSM_24) bpp = 24;
     if(header.mPsm == GS_PSM_32) bpp = 32;
 
-    TextureBuffer core(header.mWidth, header.mHeight, bpp, format, type);
+    texture_buffer core(header.mWidth, header.mHeight, bpp, format, type);
     resource.read((char*) core.mData.data(), core.mData.size());
 
     if( header.mPsm == GS_PSM_8 || header.mPsm == GS_PSM_4 )
@@ -124,15 +124,15 @@ Texture* TextureManager::LoadGsTexture(const memory::name& name, const std::stri
         if(header.mClutPsm == GS_PSM_16) bpp = 16;
         if(header.mClutPsm == GS_PSM_24) bpp = 24;
         if(header.mClutPsm == GS_PSM_32) bpp = 32;
-        TextureBuffer clut(header.mClutWidth, header.mClutHeight, bpp, format, type);
+        texture_buffer clut(header.mClutWidth, header.mClutHeight, bpp, format, type);
         resource.read((char*) clut.mData.data(), clut.mData.size());
-        return CreateTexture(name, std::move(core), std::move(clut));
+        return create_texture(name, std::move(core), std::move(clut));
     } else {
-        return CreateTexture(name, std::move(core));
+        return create_texture(name, std::move(core));
     }
 }
 
-Texture* TextureManager::LoadPNG(const memory::name& name, const std::string& path)
+texture* texture_manager::load_png(const memory::name& name, const std::string& path)
 {
     FILE* file = fopen(path.c_str(), "r");
     if (!file) {
@@ -180,7 +180,7 @@ Texture* TextureManager::LoadPNG(const memory::name& name, const std::string& pa
     try {
         GLenum format = (color_type == PNG_COLOR_TYPE_RGBA) ? GL_RGBA : GL_RGB;
         GLenum type = GL_UNSIGNED_BYTE;
-        TextureBuffer core(width, height, bpp, format, type);
+        texture_buffer core(width, height, bpp, format, type);
         memory::buffer<png_bytep> row_pointers(height);
 
         for (size_t i = 0; i < height; i++) row_pointers[i] = core.mData.data() + i * row_bytes;
@@ -188,7 +188,7 @@ Texture* TextureManager::LoadPNG(const memory::name& name, const std::string& pa
         png_destroy_read_struct(&png, &info, nullptr);
         fclose(file);
 
-        return CreateTexture(std::move(name), std::move(core));
+        return create_texture(std::move(name), std::move(core));
     } catch(const std::exception& e)
     {
         png_destroy_read_struct(&png, &info, nullptr);

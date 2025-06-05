@@ -24,13 +24,13 @@
 namespace pse
 {
 
-void SkyboxRenderer::LoadSkybox(const std::string& img, float size, int divisions)
+void skybox_renderer::load_skybox(const std::string& img, float size, int divisions)
 {
-    if(mList || mSkyTexture) UnloadSkybox();
+    if(mList || mSkyTexture) unload_skybox();
 
     float subSize = size / (float) divisions;
 
-    mSkyTexture = mTextureManager->LoadTexture(img, img);
+    mSkyTexture = mTextureManager->load_texture(img, img);
 
     mList = glGenLists(1);
     glNewList(mList, GL_COMPILE);
@@ -101,18 +101,18 @@ void SkyboxRenderer::LoadSkybox(const std::string& img, float size, int division
 
 }
 
-void SkyboxRenderer::UnloadSkybox()
+void skybox_renderer::unload_skybox()
 {
     glDeleteLists(mList, 1);
-    mTextureManager->DeleteTexture(mSkyTexture->mName.mID);
+    mTextureManager->delete_texture(mSkyTexture->mName.mUuid);
 }
 
-void SkyboxRenderer::RenderSky(PerspectiveCamera& camera, bool render)
+void skybox_renderer::render_sky(perspective_camera& camera, bool render)
 {
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    camera.Apply();
+    camera.apply();
 
     if(mList && mSkyTexture && render) 
     {
@@ -120,7 +120,7 @@ void SkyboxRenderer::RenderSky(PerspectiveCamera& camera, bool render)
         glDisable(GL_LIGHTING);
         glDepthMask(GL_FALSE);
 
-        mSkyTexture->Bind();
+        mSkyTexture->bind();
         glPushMatrix();
         glTranslatef(camera.mPosition.x, camera.mPosition.y, camera.mPosition.z);
         glCallList(mList);

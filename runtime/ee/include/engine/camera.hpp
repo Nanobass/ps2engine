@@ -17,38 +17,28 @@
 // System Includes
 //========================================
 
-/* standard library */
-#include <cstddef>
-#include <cstdint>
-
-/* ps2gl */
-#include <GL/ps2gl.h>
-#include <GL/gl.h>
-
-/* ps2stuff */
-#include <ps2s/gs.h>
-
 //========================================
 // Project Includes
 //========================================
 
-/* ps2memory */
+/* core */
+#include <core/log.hpp>
+#include <core/math.hpp>
 #include <core/memory.hpp>
 
-/* ps2glu */
-#include <ps2glu.hpp>
-
-/* ps2math */
-#include <core/math.hpp>
+/* ps2gl */
+#include <GL/gl.h>
+#include <GL/ps2gl.h>
+#include <GL/ps2glu.hpp>
 
 namespace pse
 {
 
-struct Camera {
+struct camera {
     pse::math::mat4 mProjectionMatrix;
     pse::math::mat4 mViewMatrix;
 
-    virtual void Apply() 
+    virtual void apply() 
     {
         glMatrixMode(GL_PROJECTION);
         gluLoadMatrix(mProjectionMatrix);
@@ -57,21 +47,21 @@ struct Camera {
     }
 };
 
-struct PerspectiveCamera : public Camera {
+struct perspective_camera : public camera {
     pse::math::vec4 mPosition, mTarget, mUp = pse::math::vec4(0.0F, 1.0F, 0.0F);
 
     float mNearPlane, mFarPlane;
     float mFieldOfView;
     float mAspectRatio;
 
-    PerspectiveCamera(float fov, float near, float far, float aspect)
+    perspective_camera(float fov, float near, float far, float aspect)
         :   mNearPlane(near)
         ,   mFarPlane(far)
         ,   mFieldOfView(fov)
         ,   mAspectRatio(aspect)
     {}
 
-    void Apply() 
+    void apply() 
     {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
@@ -84,20 +74,20 @@ struct PerspectiveCamera : public Camera {
     }
 };
 
-struct OrthographicCamera : public Camera {
+struct orthographic_camera : public camera {
     pse::math::vec4 mPosition;
 
     float mScreenWidth, mScreenHeight;
     float mWorldWidth, mWorldHeight;
     float mAspectRatio;
 
-    OrthographicCamera(float width, float height, float aspect)
+    orthographic_camera(float width, float height, float aspect)
         :   mWorldWidth(width)
         ,   mWorldHeight(height)
         ,   mAspectRatio(aspect)
     {}
 
-    void Apply() 
+    void apply() 
     {
         mScreenWidth = mWorldWidth * mAspectRatio;
         mScreenHeight = mWorldHeight;

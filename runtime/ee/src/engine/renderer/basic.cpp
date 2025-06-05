@@ -189,9 +189,9 @@ void BasicRenderer::FillArc(float x, float y, float width, float height, float a
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawImage(float x, float y, float width, float height, pse::Texture* image, const pse::math::color& color)
+void BasicRenderer::DrawImage(float x, float y, float width, float height, pse::texture* image, const pse::math::color& color)
 {
-    image->Bind();
+    image->bind();
     glBegin(GL_QUADS);
     glColor4fv(color.vector);
     glTexCoord2f(0.0F, 0.0F);
@@ -209,7 +209,7 @@ void BasicRenderer::DrawImage(float x, float y, float width, float height, pse::
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void BasicRenderer::DrawImageRotated(float x, float y, float width, float height, float angle, pse::Texture* image, const pse::math::color& color)
+void BasicRenderer::DrawImageRotated(float x, float y, float width, float height, float angle, pse::texture* image, const pse::math::color& color)
 {
     glTranslatef(width / 2.0F, -height / 2.0F, 0.0F);
     glRotatef(angle, 0.0F, 0.0F, 1.0F);

@@ -7,7 +7,7 @@
 //
 // File:        texturemanager.hpp
 //
-// Description: Texture Manager
+// Description: texture Manager
 //
 //=============================================================================
 
@@ -18,43 +18,29 @@
 //========================================
 
 /* standard library */
-#include <memory>
 #include <map>
-#include <cassert>
-#include <fstream>
-#include <iostream>
-
-/* ps2gl */
-#include <GL/ps2gl.h>
-#include <GL/gl.h>
-
-/* ps2stuff */
-#include <ps2s/gs.h>
+#include <memory>
 
 //========================================
 // Project Includes
 //========================================
 
-/* ps2memory */
+/* core */
+#include <core/log.hpp>
+#include <core/math.hpp>
 #include <core/memory.hpp>
 
-/* ps2glu */
-#include <ps2glu.hpp>
+/* ps2gl */
+#include <GL/gl.h>
+#include <GL/ps2gl.h>
+#include <GL/ps2glu.hpp>
 
-/* ps2math */
-#include <core/math.hpp>
-#include <core/log.hpp>
+/* ps2stuff */
+#include <ps2s/gs.h>
 
 
 namespace pse
 {
-
-namespace PS2
-{
-
-void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type);
-    
-} // namespace PS2
 
 inline bool ends_with(std::string const & value, std::string const & ending)
 {
@@ -62,9 +48,9 @@ inline bool ends_with(std::string const & value, std::string const & ending)
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-struct TextureBuffer
+struct texture_buffer
 {
-    static uint32_t GetSize(uint16_t width, uint16_t height, uint8_t bpp)
+    static uint32_t get_size(uint16_t width, uint16_t height, uint8_t bpp)
     {
         return width * height * bpp / 8;
     }
@@ -76,19 +62,19 @@ struct TextureBuffer
     GLenum mType = GL_INVALID_ENUM;
     memory::buffer<uint8_t> mData;
 
-    TextureBuffer(uint16_t width, uint16_t height, uint8_t bpp, GLenum format, GLenum type)
+    texture_buffer(uint16_t width, uint16_t height, uint8_t bpp, GLenum format, GLenum type)
         :   mWidth(width),
             mHeight(height),
             mBpp(bpp),
             mFormat(format),
             mType(type),
-            mData(GetSize())
+            mData(get_size())
     {}
 
-    TextureBuffer(const TextureBuffer&) = delete;
-    TextureBuffer& operator=(const TextureBuffer&) = delete;
+    texture_buffer(const texture_buffer&) = delete;
+    texture_buffer& operator=(const texture_buffer&) = delete;
 
-    TextureBuffer(TextureBuffer&& other) noexcept
+    texture_buffer(texture_buffer&& other) noexcept
         : mWidth(std::exchange(other.mWidth, 0)),
           mHeight(std::exchange(other.mHeight, 0)),
           mBpp(std::exchange(other.mBpp, 0)),
@@ -97,45 +83,45 @@ struct TextureBuffer
           mData(std::move(other.mData))
     {}
 
-    uint32_t GetSize() 
+    uint32_t get_size() 
     {
-        return GetSize(mWidth, mHeight, mBpp);
+        return get_size(mWidth, mHeight, mBpp);
     }
 };
 
-struct Texture 
+struct texture 
 {
     memory::name mName;
-    TextureBuffer* mCore = nullptr;
-    TextureBuffer* mClutBuffer = nullptr;
+    texture_buffer* mCore = nullptr;
+    texture_buffer* mClutBuffer = nullptr;
     GLuint mGLName;
 
-    Texture(memory::name name, TextureBuffer core) : mName(name), mGLName(0)
+    texture(memory::name name, texture_buffer core) : mName(name), mGLName(0)
     {
-        mCore = new TextureBuffer(std::move(core));
+        mCore = new texture_buffer(std::move(core));
         glGenTextures(1, &mGLName);
-        Upload();
-        operator<<(log::out(log::kInfo) << "Texture Created: ") << std::endl;
+        upload();
+        operator<<(log::out(log::kInfo) << "texture created: ") << std::endl;
     }
 
-    Texture(memory::name name, TextureBuffer core, TextureBuffer clut) : mName(name)
+    texture(memory::name name, texture_buffer core, texture_buffer clut) : mName(name)
     {
-        mCore = new TextureBuffer(std::move(core));
-        mClutBuffer = new TextureBuffer(std::move(clut));
+        mCore = new texture_buffer(std::move(core));
+        mClutBuffer = new texture_buffer(std::move(clut));
         glGenTextures(1, &mGLName);
-        Upload();
-        operator<<(log::out(log::kInfo) << "Texture Created: ") << std::endl;
+        upload();
+        operator<<(log::out(log::kInfo) << "texture created: ") << std::endl;
     }
 
-    virtual ~Texture()
+    virtual ~texture()
     {
-        operator<<(log::out(log::kInfo) << "Texture Deleted: ") << std::endl;
+        operator<<(log::out(log::kInfo) << "texture deleted: ") << std::endl;
         if(mCore) delete mCore;
         if(mClutBuffer) delete mClutBuffer;
         if(mGLName != 0) glDeleteTextures(1, &mGLName);
     }
 
-    void SetFilter(GLenum filter)
+    void set_filter(GLenum filter)
     {
         glBindTexture(GL_TEXTURE_2D, mGLName);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
@@ -143,7 +129,7 @@ struct Texture
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void Upload()
+    void upload()
     {
         glBindTexture(GL_TEXTURE_2D, mGLName);
         glTexImage2D(GL_TEXTURE_2D, 0 /* mipmap */, GL_RGBA /* ignored */, mCore->mWidth, mCore->mHeight, 0 /* border */, mCore->mFormat, mCore->mType, mCore->mData.data());
@@ -154,18 +140,18 @@ struct Texture
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    void Bind()
+    void bind()
     {
         glBindTexture(GL_TEXTURE_2D, mGLName);
         if(mClutBuffer) glColorTable(GL_COLOR_TABLE, GL_RGBA, 256, GL_RGBA, GL_UNSIGNED_INT, mClutBuffer->mData.data());
     }
 
-    int GetWidth() const { return mCore->mWidth; }
-    int GetHeight() const { return mCore->mHeight; }
+    int get_width() const { return mCore->mWidth; }
+    int get_height() const { return mCore->mHeight; }
 
     std::ostream& operator<<(std::ostream& os)
     {
-        os << "Texture ID=\"" << mName.mStringName << "\" (" << mName.mID << ")" << " GL=" << mGLName << " " << mCore->mWidth << "x" << mCore->mHeight; 
+        os << "texture uuid=\"" << mName.mName << "\" (" << (uint32_t) mName.mUuid << ")" << " GL=" << mGLName << " " << mCore->mWidth << "x" << mCore->mHeight; 
         return os;
     }
 
@@ -184,16 +170,16 @@ struct GsTextureHeader {
     uint8_t mFunction;
 } __attribute__ ((packed));
 
-struct TextureManager
+struct texture_manager
 {
 
     // gotta love c++
-    std::map<uint32_t, std::unique_ptr<Texture>> mTextures;
+    std::map<uuid, std::unique_ptr<texture>> mTextures;
 
-    TextureManager(uint32_t vramStart, uint32_t vramEnd)
+    texture_manager(uint32_t vramStart, uint32_t vramEnd)
     {
-        log::out(log::kInfo) << "Initializing TextureManager: vramStart=" << vramStart << ", vramEnd=" << vramEnd << std::endl;
-        InitializeGsMemory(vramStart, vramEnd);
+        log::out(log::kInfo) << "initializing texture manager: vramStart=" << vramStart << ", vramEnd=" << vramEnd << std::endl;
+        initialize_gs_memory(vramStart, vramEnd);
         
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_BLEND); // free on ps2 iirc
@@ -201,56 +187,56 @@ struct TextureManager
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     }
 
-    ~TextureManager()
+    ~texture_manager()
     {
         mTextures.clear();
     }
 
-    void InitializeGsMemory(uint32_t vramStart, uint32_t vramEnd);
+    void initialize_gs_memory(uint32_t vramStart, uint32_t vramEnd);
 
-    Texture* LoadTexture(const memory::name& name, const std::string& path)
+    texture* load_texture(const memory::name& name, const std::string& path)
     {
 
         if(ends_with(path, "gs"))
         {
-            return LoadGsTexture(name, path);
+            return load_gs_texture(name, path);
         }
         if(ends_with(path, "png"))
         {
-            return LoadPNG(name, path);
+            return load_png(name, path);
         }
         throw std::exception();
     }
 
-    Texture* LoadGsTexture(const memory::name& name, const std::string& path);
+    texture* load_gs_texture(const memory::name& name, const std::string& path);
 
-    Texture* LoadPNG(const memory::name& name, const std::string& path);
+    texture* load_png(const memory::name& name, const std::string& path);
 
-    Texture* CreateTexture(const memory::name& name, TextureBuffer core)
+    texture* create_texture(const memory::name& name, texture_buffer core)
     {
-        auto texture = std::make_unique<Texture>(name, std::move(core));
-        Texture* pointer = texture.get();
-        mTextures[name.mID] = std::move(texture);
+        auto tex = std::make_unique<texture>(name, std::move(core));
+        texture* pointer = tex.get();
+        mTextures[name.mUuid] = std::move(tex);
         return pointer;
     }
 
-    Texture* CreateTexture(const memory::name& name, TextureBuffer core, TextureBuffer clut)
+    texture* create_texture(const memory::name& name, texture_buffer core, texture_buffer clut)
     {
-        auto texture = std::make_unique<Texture>(name, std::move(core), std::move(clut));
-        Texture* pointer = texture.get();
-        mTextures[name.mID] = std::move(texture);
+        auto tex = std::make_unique<texture>(name, std::move(core), std::move(clut));
+        texture* pointer = tex.get();
+        mTextures[name.mUuid] = std::move(tex);
         return pointer;
     }
 
-    Texture* FindTexture(const uint32_t& name)
+    texture* find_texture(const uuid& uuid)
     {
-        auto it = mTextures.find(name);
+        auto it = mTextures.find(uuid);
         return it->second.get();
     }
 
-    void DeleteTexture(const uint32_t& name)
+    void delete_texture(const uuid& uuid)
     {
-        auto it = mTextures.find(name);
+        auto it = mTextures.find(uuid);
         mTextures.erase(it);
     }
 

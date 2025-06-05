@@ -17,37 +17,6 @@
 // System Includes
 //========================================
 
-/* standard library */
-#include <math.h>
-#include <cstddef>
-#include <cstdint>
-#include <fstream>
-#include <utility>
-#include <memory>
-#include <string.h>
-#include <iostream>
-#include <algorithm>
-#include <exception>
-#include <sstream>
-#include <regex>
-
-/* ps2sdk */
-#include <tamtypes.h>
-#include <kernel.h>
-#include <sifrpc.h>
-#include <loadfile.h>
-#include <stdio.h>
-#include <graph.h>
-#include <gs_psm.h>
-#include <osd_config.h>
-
-/* ps2gl */
-#include <GL/ps2gl.h>
-#include <GL/gl.h>
-
-/* ps2stuff */
-#include <ps2s/gs.h>
-
 //========================================
 // Project Includes
 //========================================
@@ -57,51 +26,52 @@
 #include <engine/lighting.hpp>
 #include <engine/camera.hpp>
 
-/* ps2memory */
+/* core */
+#include <core/log.hpp>
+#include <core/math.hpp>
 #include <core/memory.hpp>
 
-/* ps2glu */
-#include <ps2glu.hpp>
-
-/* ps2math */
-#include <core/math.hpp>
+/* ps2gl */
+#include <GL/gl.h>
+#include <GL/ps2gl.h>
+#include <GL/ps2glu.hpp>
 
 namespace pse
 {
 
-struct SkyboxRenderer
+struct skybox_renderer
 {
-    TextureManager* mTextureManager;
-    LightingManager* mLightingManager;
+    texture_manager* mTextureManager;
+    lighting_manager* mLightingManager;
 
-    Texture* mSkyTexture = nullptr;
-    Light* mSunLight = nullptr;
+    texture* mSkyTexture = nullptr;
+    light* mSunLight = nullptr;
 
     GLuint mList = 0;
 
-    SkyboxRenderer(TextureManager* textureManager, LightingManager* lightingManager) 
+    skybox_renderer(texture_manager* textureManager, lighting_manager* lightingManager) 
         :   mTextureManager(textureManager)
         ,   mLightingManager(lightingManager)
     {
-        mSunLight = mLightingManager->AllocateLight(true);
+        mSunLight = mLightingManager->allocate_light(true);
         mSunLight->mPosition = pse::math::vec4(1.0F, 1.0F, 1.0F, 0.0F);
         mSunLight->mAmbient = pse::math::color(0.0F, 0.0F, 0.0F, 1.0F);
         mSunLight->mDiffuse = pse::math::color(1.0F, 1.0F, 1.0F, 1.0F);
         mSunLight->mSpecular = pse::math::color(1.0F, 1.0F, 1.0F, 1.0F);
-        mSunLight->SetEnabled(true);
+        mSunLight->set_enabled(true);
     }
 
-    ~SkyboxRenderer()
+    ~skybox_renderer()
     {
-        mSunLight->Free(true);
-        if(mList || mSkyTexture) UnloadSkybox();
+        mSunLight->free(true);
+        if(mList || mSkyTexture) unload_skybox();
     }
 
-    void LoadSkybox(const std::string& img, float size = 16.0F, int divisions = 16);
+    void load_skybox(const std::string& img, float size = 16.0F, int divisions = 16);
 
-    void UnloadSkybox();
+    void unload_skybox();
 
-    void RenderSky(PerspectiveCamera& camera, bool render = true);
+    void render_sky(perspective_camera& camera, bool render = true);
 
 };
     

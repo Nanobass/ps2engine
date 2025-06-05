@@ -22,14 +22,13 @@
 //========================================
 
 #include <core/memory.hpp>
-#include <core/memory.hpp>
 
 namespace pse
 {
 
 enum game_memory_allocator : memory::allocator_id
 {
-    GME_FAST = memory::PSE_ALLOCATOR_END,
+    GME_OBJECT = memory::PSE_ALLOCATOR_END,
     GME_END
 };
 

@@ -23,9 +23,6 @@
 #include <map>
 #include <array>
 
-/* ps2gl */
-#include <GL/gl.h>
-
 //========================================
 // Project Includes
 //========================================
@@ -33,64 +30,65 @@
 /* engine */
 #include <engine/texturemanager.hpp>
 
-/* ps2memory */
+/* core */
+#include <core/log.hpp>
+#include <core/math.hpp>
 #include <core/memory.hpp>
 
-/* ps2glu */
-#include <ps2glu.hpp>
-
-/* ps2math */
-#include <core/math.hpp>
+/* ps2gl */
+#include <GL/gl.h>
+#include <GL/ps2gl.h>
+#include <GL/ps2glu.hpp>
 
 namespace pse
 {
 
-struct Glyph {
+struct glyph {
     float mU1, mV1, mU2, mV2;
     float mWidth, mHeight, mXOffset, mYOffset, mXAdvance;
 };
 
-struct Font {
+struct font {
     memory::name mName;
-    Texture* mFontTexture;
-    std::array<Glyph, 128> mGlyphs;
+    texture* mFontTexture;
+    std::array<glyph, 128> mGlyphs;
     float mSize, mLineHeight;
 
-    Font(memory::name name) 
+    font(memory::name name) 
         : mName(name)
     {}
 
 };
 
-struct TextRenderer {
+struct text_renderer {
     
-    std::map<uint32_t, std::unique_ptr<Font>> mFonts;
-    TextureManager* mTextureManager;
+    std::map<uuid, std::unique_ptr<font>> mFonts;
+    texture_manager* mTextureManager;
 
-    TextRenderer(TextureManager* textureManager) : mTextureManager(textureManager)
+    text_renderer(texture_manager* textureManager) : mTextureManager(textureManager)
     {
         for(auto& e : mFonts)
         {
-            Font* font = e.second.get();
-            mTextureManager->DeleteTexture(font->mFontTexture->mName.mID);
+            font* font = e.second.get();
+            mTextureManager->delete_texture(font->mFontTexture->mName.mUuid);
         }
         mFonts.clear();
     }
 
-    ~TextRenderer()
+    ~text_renderer()
     {
 
     }
 
-    void DrawString(Font* font, std::string string);
+    void draw_string(font* font, std::string string);
 
-    Font* LoadFont(const memory::name& name, const std::string& fnt, const std::string& img, float size, float lineHeight);
+    font* load_font(const memory::name& name, const std::string& fnt, const std::string& img, float size, float lineHeight);
 
-    void DeleteFont(uint32_t name)
+    void delete_font(uint32_t name)
     {
         auto it = mFonts.find(name);
-        Font* font = it->second.get();
-        mTextureManager->DeleteTexture(font->mFontTexture->mName.mID);
+        font* font = it->second.get();
+        mTextureManager->delete_texture(font->mFontTexture->mName.mUuid);
         mFonts.erase(it);
     }
 };

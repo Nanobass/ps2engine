@@ -60,8 +60,8 @@ std::string generate_metrics()
     ss << "    Number of Allocations: " << number_of_allocations << std::endl;
     ss << "    Peak Usage: " << peak_usage / 1024 << " KBytes" << std::endl;
 
-    pse::memory::get_allocator(pse::GME_FAST)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
-    ss << "  Fast Allocator: " << std::endl;
+    pse::memory::get_allocator(pse::GME_OBJECT)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
+    ss << "  Object Allocator: " << std::endl;
     ss << "    Total Free Memory: " << total_free_memory / 1024 << " KBytes" << std::endl;
     ss << "    Largest Block: " << largest_block << " Bytes" << std::endl;
     ss << "    Number of Allocations: " << number_of_allocations << std::endl;

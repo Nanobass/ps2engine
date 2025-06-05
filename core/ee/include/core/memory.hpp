@@ -52,6 +52,33 @@ extern "C" {
     extern size_t dlmalloc_usable_size(void* ptr);
 }
 
+namespace pse
+{
+class uuid
+{
+public:
+    uuid() : mUuid(rand()) {}
+    uuid(uint32_t uuid) : mUuid(uuid) {}
+    uuid(const uuid&) = default;
+    operator uint32_t() const { return mUuid; }
+private:
+    uint32_t mUuid;
+};
+} // namespace pse
+
+namespace std {
+	template <typename T> struct hash;
+
+	template<>
+	struct hash<pse::uuid>
+	{
+		std::size_t operator()(const pse::uuid& uuid) const
+		{
+			return (uint32_t) uuid;
+		}
+	};
+}
+
 namespace pse::memory
 {
 
@@ -461,19 +488,53 @@ private:
     size_t mPeakUsage;
 };
 
+template <typename T>
+class stl_allocator {
+public:
+    using value_type = T;
+
+    stl_allocator(allocator_id alloc = PSE_ALLOCATOR_DEFAULT) noexcept : mAlloc(alloc) {}
+
+    template <typename U>
+    stl_allocator(const stl_allocator<U>& other) noexcept : mAlloc(other.mAlloc) {}
+
+    T* allocate(std::size_t n) {
+        return static_cast<T*>(pse::memory::allocate(mAlloc, n * sizeof(T)));
+    }
+
+    void deallocate(T* p, std::size_t) noexcept {
+        pse::memory::deallocate(mAlloc, p);
+    }
+
+    template <typename U>
+    bool operator==(const stl_allocator<U>& other) const noexcept {
+        return mAlloc == other.mAlloc;
+    }
+
+    template <typename U>
+    bool operator!=(const stl_allocator<U>& other) const noexcept {
+        return mAlloc != other.mAlloc;
+    }
+
+    allocator_id get_allocator_id() const noexcept { return mAlloc; }
+
+private:
+    allocator_id mAlloc;
+};
+
 uint32_t joaat(const std::string& str);
 
 struct name
 {
-    std::string mStringName;
-    uint32_t mID;
+    std::string mName;
+    uuid mUuid;
 
     name(const std::string& name) 
-        : mStringName(name), mID(joaat(name))
+        : mName(name), mUuid(joaat(name))
     {}
 
     name(const char* name)
-        : mStringName(name), mID(joaat(mStringName))
+        : mName(name), mUuid(joaat(mName))
     {}
 
 };

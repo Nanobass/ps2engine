@@ -50,7 +50,7 @@ void initialize_memory_system()
 {
     if(g_MemorySystemInitialized) return;
     memory::initialize();
-    memory::register_douglea_allocator(GME_FAST, memory::PSE_ALLOCATOR_DEFAULT, "Fast", 1024 * 1024 * 2);
+    memory::register_douglea_allocator(GME_OBJECT, memory::PSE_ALLOCATOR_DEFAULT, "Object Heap", 1024 * 1024 * 2);
     g_MemorySystemInitialized = true;
     std::atexit(exit_handler);
     std::set_terminate(crash_handler);

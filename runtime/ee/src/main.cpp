@@ -19,7 +19,7 @@
 #include <math.h>
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
+#include <sstream>
 #include <utility>
 #include <memory>
 #include <string.h>
@@ -41,6 +41,7 @@
 /* ps2gl */
 #include <GL/ps2gl.h>
 #include <GL/gl.h>
+#include <GL/ps2glu.hpp>
 
 /* ps2stuff */
 #include <ps2s/gs.h>
@@ -50,6 +51,7 @@
 //========================================
 
 #include <core/log.hpp>
+#include <core/math.hpp>
 
 #include <engine/memory/memory.hpp>
 #include <engine/memory/metrics.hpp>
@@ -59,16 +61,19 @@
 #include <engine/renderer/skybox.hpp>
 #include <engine/renderer/basic.hpp>
 
-#include <ps2glu.hpp>
-#include <core/math.hpp>
+#include <engine/scene.hpp>
+#include <engine/gameobject.hpp>
+#include <engine/components.hpp>
+
 #include <ps2pad.hpp>
 
-std::unique_ptr<pse::RenderManager> g_RenderManager = nullptr;
-std::unique_ptr<pse::TextRenderer> g_TextRenderer = nullptr;
-std::unique_ptr<pse::SkyboxRenderer> g_SkyboxRenderer = nullptr;
+std::unique_ptr<pse::render_manager> g_RenderManager = nullptr;
+std::unique_ptr<pse::text_renderer> g_TextRenderer = nullptr;
+std::unique_ptr<pse::skybox_renderer> g_SkyboxRenderer = nullptr;
 std::unique_ptr<pse::BasicRenderer> g_BasicRenderer = nullptr;
-std::unique_ptr<pse::OrthographicCamera> g_HudCamera = nullptr;
-pse::Font* g_DefaultFont = nullptr;
+std::unique_ptr<pse::orthographic_camera> g_HudCamera = nullptr;
+pse::font* g_DefaultFont = nullptr;
+pse::scene* g_Scene = nullptr;
 
 int main(int argc, char const *argv[]) 
 {
@@ -83,20 +88,28 @@ int main(int argc, char const *argv[])
 
     bool bCloseRequested = false;
 
-    g_RenderManager = std::make_unique<pse::RenderManager>();
-    g_TextRenderer = std::make_unique<pse::TextRenderer>(g_RenderManager->mTextureManager.get());
-    g_SkyboxRenderer = std::make_unique<pse::SkyboxRenderer>(g_RenderManager->mTextureManager.get(), g_RenderManager->mLightingManager.get());
+    g_RenderManager = std::make_unique<pse::render_manager>();
+    g_TextRenderer = std::make_unique<pse::text_renderer>(g_RenderManager->mTextureManager.get());
+    g_SkyboxRenderer = std::make_unique<pse::skybox_renderer>(g_RenderManager->mTextureManager.get(), g_RenderManager->mLightingManager.get());
     g_BasicRenderer = std::make_unique<pse::BasicRenderer>(g_RenderManager->mTextureManager.get());
-    g_HudCamera = std::make_unique<pse::OrthographicCamera>(640.0F, 480.0F, g_RenderManager->mAspectRatio);
-    g_DefaultFont = g_TextRenderer->LoadFont("emotion", "emotion.fnt", "emotion.gs", 32.0F, 39.0F);
+    g_HudCamera = std::make_unique<pse::orthographic_camera>(640.0F, 480.0F, g_RenderManager->mAspectRatio);
+    g_DefaultFont = g_TextRenderer->load_font("emotion", "emotion.fnt", "emotion.gs", 32.0F, 39.0F);
+
+    g_Scene = new(pse::GME_OBJECT) pse::scene();
+    pse::game_object gmCamera = g_Scene->create_entity("Camera");
+    pse::game_object gmModel = g_Scene->create_entity("Model");
+    for(int i = 0; i < 32; i++)
+    {
+        g_Scene->create_entity("GameObject");
+    }
     
-    g_SkyboxRenderer->LoadSkybox("sky.gs");
+    g_SkyboxRenderer->load_skybox("sky.gs");
     g_SkyboxRenderer->mSunLight->mDiffuse = pse::math::color(1.0F, 1.0F, 1.0F);
     g_SkyboxRenderer->mSunLight->mAmbient = pse::math::color(0.05F, 0.05F, 0.05F);
 
-    g_RenderManager->mLightingManager->SetLightingMode(pse::LightingMode::Lighting);
+    g_RenderManager->mLightingManager->set_lighting_mode(pse::lighting_mode::kLighting);
 
-    pse::PerspectiveCamera camera(40.0F, 1.0F, 100.0F, g_RenderManager->mAspectRatio);
+    pse::perspective_camera camera(40.0F, 1.0F, 100.0F, g_RenderManager->mAspectRatio);
     pse::math::vec4 cameraRotation(0, 0, 0);
     camera.mPosition = pse::math::vec4(0, 0, 5);
     camera.mTarget = pse::math::vec4(0, 0, 0);
@@ -104,8 +117,8 @@ int main(int argc, char const *argv[])
     std::string metrics = "";
     int frameCounter = 0;
 
-    pse::Material* material = new pse::Material();
-    g_RenderManager->mLightingManager->SetMaterial(material);
+    pse::material * material = new pse::material();
+    g_RenderManager->mLightingManager->set_material(material);
 
     pse::memory::set_tracking(false);
     do {
@@ -136,26 +149,26 @@ int main(int argc, char const *argv[])
         debug_info << "Camera Position: " << camera.mPosition << std::endl;
         debug_info << "Camera Rotation: " << cameraRotation << std::endl;
 
-        g_RenderManager->BeginFrame();
-        g_SkyboxRenderer->RenderSky(camera);
-        g_RenderManager->mLightingManager->DoLighting(camera);
+        g_RenderManager->begin_frame();
+        g_SkyboxRenderer->render_sky(camera);
+        g_RenderManager->mLightingManager->do_lighting(camera);
 
-        g_HudCamera->Apply();
+        g_HudCamera->apply();
         glPushMatrix();
         glTranslatef(-g_HudCamera->mScreenWidth / 2.0F, g_HudCamera->mScreenHeight / 2.0F, 0.0F);
         glScalef(24.0F, 24.0F, 1.0F);
         glTranslatef(0.0F, -1.0F, 0.0F);
-        g_TextRenderer->DrawString(g_DefaultFont, metrics);
+        g_TextRenderer->draw_string(g_DefaultFont, metrics);
         glPopMatrix();
 
         glPushMatrix();
         glTranslatef(-g_HudCamera->mScreenWidth / 2.0F, -g_HudCamera->mScreenHeight / 2.0F, 0.0F);
         glScalef(24.0F, 24.0F, 1.0F);
         glTranslatef(0.0F, 1.0F, 0.0F);
-        g_TextRenderer->DrawString(g_DefaultFont, debug_info.str());
+        g_TextRenderer->draw_string(g_DefaultFont, debug_info.str());
         glPopMatrix();
  
-        g_RenderManager->EndFrame();
+        g_RenderManager->end_frame();
     } while (!bCloseRequested);
 
     g_BasicRenderer.reset();
