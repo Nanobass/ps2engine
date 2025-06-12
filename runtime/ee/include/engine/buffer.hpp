@@ -39,7 +39,7 @@
 namespace pse
 {
 
-template <typename T = pse::math::vec4>
+template <typename T = math::vec4>
 struct VertexBuffer
 {
     using type = T;

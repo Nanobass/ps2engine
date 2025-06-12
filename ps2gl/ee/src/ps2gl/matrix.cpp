@@ -132,9 +132,6 @@ void glPopMatrix(void)
     matStack.Pop();
 }
 
-// courtesy the lovely folks at Intel
-extern void Invert2(float* mat, float* dst);
-
 void glLoadMatrixf(const GLfloat* m)
 {
     GL_FUNC_DEBUG("%s\n", __FUNCTION__);
@@ -147,10 +144,7 @@ void glLoadMatrixf(const GLfloat* m)
     for (int i = 0; i < 16; i++)
         *dest++ = *m++;
 
-    pse::math::mat4 invMatrix;
-    Invert2((float*)&newMat, (float*)&invMatrix);
-
-    matStack.SetTop(newMat, invMatrix);
+    matStack.SetTop(newMat, newMat.inverted());
 }
 
 void glFrustum(GLdouble left, GLdouble right,
@@ -294,11 +288,8 @@ void glMultMatrixf(const GLfloat* m)
    invMatrix = scaleMat * invMatrix;
    */
 
-    pse::math::mat4 invMatrix;
-    invMatrix.set_identity();
-    Invert2(newMatrix.matrix, invMatrix.matrix);
     CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
-    matStack.Concat(newMatrix, invMatrix);
+    matStack.Concat(newMatrix, newMatrix.inverted());
 
     //     mWarn( "glMultMatrix is not correct" );
 }
@@ -311,8 +302,8 @@ void glRotatef(GLfloat angle,
     pse::math::mat4 xform, inverse;
     pse::math::vec3 axis(x, y, z);
     axis.normalize();
-    xform.set_rotate(Math::DegToRad(angle), axis);
-    inverse.set_rotate(Math::DegToRad(-angle), axis);
+    xform.set_rotate(angle, axis);
+    inverse.set_rotate(-angle, axis);
 
     CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
     matStack.Concat(xform, inverse);
@@ -341,4 +332,28 @@ void glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 
     CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
     matStack.Concat(xform, inverse);
+}
+
+void pglLoadMatrix(const pse::math::mat4& matrix)
+{
+    CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
+    matStack.SetTop(matrix, matrix.inverted());
+}
+
+void pglMultMatrix(const pse::math::mat4& matrix)
+{
+    CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
+    matStack.Concat(matrix, matrix.inverted());
+}
+
+void pglLoadMatrixCombined(const pse::math::mat4& matrix, const pse::math::mat4& inverted)
+{
+    CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
+    matStack.SetTop(matrix, inverted);
+}
+
+void pglMultMatrixCombined(const pse::math::mat4& matrix, const pse::math::mat4& inverted)
+{
+    CMatrixStack& matStack = pGLContext->GetCurMatrixStack();
+    matStack.Concat(matrix, inverted);
 }

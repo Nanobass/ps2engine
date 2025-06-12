@@ -230,12 +230,13 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
 
         // transpose of object to world space xfrm (for light directions)
         pse::math::mat4 objToWorldXfrmTrans = glContext.GetModelViewStack().GetTop();
+
         // clear any translations.. should be doing a 3x3 transpose..
-        objToWorldXfrmTrans.columns[3].set(0.0f, 0.0f, 0.0f, 1.0f);
-        objToWorldXfrmTrans = objToWorldXfrmTrans.transpose();
+        objToWorldXfrmTrans[3].set(0.0f, 0.0f, 0.0f, 1.0f);
+        objToWorldXfrmTrans.transpose();
+
         // do we need to rescale normals?
         pse::math::mat4 normalRescale;
-        normalRescale.set_identity();
         float normalScale            = 1.0f;
         CImmDrawContext& drawContext = glContext.GetImmDrawContext();
         if (drawContext.GetRescaleNormals()) {
@@ -260,12 +261,9 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         // also turns on/off culling
         float bfc_mult = (float)drawContext.GetCullFaceDir();
         unsigned int bfc_word;
-        asm (
-            ""
+        asm(""
             : "=r"(bfc_word)
-            : "0"(bfc_mult)
-        );
-
+            : "0"(bfc_mult));
         bool do_culling = drawContext.GetDoCullFace() && (primType > GL_LINE_STRIP);
         packet += bfc_word | (unsigned int)do_culling << 5;
 
@@ -332,9 +330,8 @@ void CBaseRenderer::AddVu1RendererContext(CVifSCDmaPacket& packet, GLenum primTy
         // this should be the current color alpha if lighting is disabled
         if (!doLighting)
         {
-            matDiffuse.w = glContext.GetMaterialManager().GetCurColor().w;
-        }
-            
+            matDiffuse[3] = glContext.GetMaterialManager().GetCurColor()[3];
+        }   
         packet += matDiffuse;
 
         // specular

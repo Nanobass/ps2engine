@@ -121,7 +121,6 @@ void text_renderer::draw_string(font* font, std::string string)
     float x = 0.0F, y = 0.0F;
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
 
     font->mFontTexture->bind();
     

@@ -23,7 +23,7 @@
 
 /* engine */
 #include <engine/texturemanager.hpp>
-#include <engine/lighting.hpp>
+#include <engine/lightingmanager.hpp>
 #include <engine/camera.hpp>
 
 /* core */
@@ -42,28 +42,18 @@ namespace pse
 struct skybox_renderer
 {
     texture_manager* mTextureManager;
-    lighting_manager* mLightingManager;
 
     texture* mSkyTexture = nullptr;
-    light* mSunLight = nullptr;
 
     GLuint mList = 0;
 
-    skybox_renderer(texture_manager* textureManager, lighting_manager* lightingManager) 
+    skybox_renderer(texture_manager* textureManager) 
         :   mTextureManager(textureManager)
-        ,   mLightingManager(lightingManager)
     {
-        mSunLight = mLightingManager->allocate_light(true);
-        mSunLight->mPosition = pse::math::vec4(1.0F, 1.0F, 1.0F, 0.0F);
-        mSunLight->mAmbient = pse::math::color(0.0F, 0.0F, 0.0F, 1.0F);
-        mSunLight->mDiffuse = pse::math::color(1.0F, 1.0F, 1.0F, 1.0F);
-        mSunLight->mSpecular = pse::math::color(1.0F, 1.0F, 1.0F, 1.0F);
-        mSunLight->set_enabled(true);
     }
 
     ~skybox_renderer()
     {
-        mSunLight->free(true);
         if(mList || mSkyTexture) unload_skybox();
     }
 
@@ -71,7 +61,7 @@ struct skybox_renderer
 
     void unload_skybox();
 
-    void render_sky(perspective_camera& camera, bool render = true);
+    // void render_sky(perspective_camera& camera, bool render = true);
 
 };
     

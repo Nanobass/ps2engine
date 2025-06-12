@@ -3,7 +3,7 @@
 # |     ___|   |____  |____ |____| |    |
 #-----------------------------------------------------------------------
 
-PS2LUA_SRC=$(CURDIR)
+PS2ENGINE_SRC=$(CURDIR)
 
 EXECUTABLE = runtime
 
@@ -57,13 +57,13 @@ run:
 all: $(patsubst %, _dir_%, $(SUBDIRS))
 
 $(patsubst %, _dir_%, $(SUBDIRS)):
-	@+$(MAKE) -j -r -C $(patsubst _dir_%, %, $@) all PS2LUA_SRC=$(PS2LUA_SRC)
+	@+$(MAKE) -j -r -C $(patsubst _dir_%, %, $@) all PS2ENGINE_SRC=$(PS2ENGINE_SRC)
 
 clean: $(patsubst %, _cleandir_%, $(SUBDIRS))
 	rm -rf $(PACKAGE_FILES)
 
 $(patsubst %, _cleandir_%, $(SUBDIRS)):
-	@+$(MAKE) -j -C $(patsubst _cleandir_%, %, $@) clean PS2LUA_SRC=$(PS2LUA_SRC)
+	@+$(MAKE) -j -C $(patsubst _cleandir_%, %, $@) clean PS2ENGINE_SRC=$(PS2ENGINE_SRC)
 
 #
 # PACKAGE PROCESS

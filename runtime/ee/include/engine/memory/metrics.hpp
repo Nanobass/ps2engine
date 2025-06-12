@@ -28,4 +28,4 @@ namespace pse::metrics
 
 std::string generate_metrics();
     
-} // namespace pse::metrics
+} // namespace metrics

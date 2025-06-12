@@ -1,6 +1,6 @@
 EE_LIB=libps2gl.a
 
-EE_INCS=-Ivu1 -I$(PS2LUA_SRC)/core/ee/include
+EE_INCS=-Ivu1 -I$(PS2ENGINE_SRC)/core/ee/include
 
 RENDERERS = \
 	fast_nolights \

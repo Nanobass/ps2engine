@@ -33,6 +33,8 @@
 #include "ps2gl/matrix.h"
 #include "ps2gl/texture.h"
 
+#include <core/log.hpp>
+
 /********************************************
  * globals
  */

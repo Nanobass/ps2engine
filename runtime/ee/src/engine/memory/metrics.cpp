@@ -46,21 +46,21 @@ std::string generate_metrics()
     ss << "  CLUT Uploads: " << pglGetMetric(kMetricsClutUploadCount) << std::endl;
     pglResetMetrics();
     
-    ss << "  Total Free Memory: " << pse::memory::get_total_free_memory() / 1024 << " KBytes" << std::endl;
+    ss << "  Total Free Memory: " << memory::get_total_free_memory() / 1024 << " KBytes" << std::endl;
 
     size_t total_free_memory;
     size_t largest_block;
     size_t number_of_allocations;
     size_t peak_usage;
 
-    pse::memory::get_allocator(pse::memory::PSE_ALLOCATOR_DEFAULT)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
+    memory::get_allocator(memory::PSE_ALLOCATOR_DEFAULT)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
     ss << "  Default Allocator: " << std::endl;
     ss << "    Total Free Memory: " << total_free_memory / 1024 << " KBytes" << std::endl;
     ss << "    Largest Block: " << largest_block << " Bytes" << std::endl;
     ss << "    Number of Allocations: " << number_of_allocations << std::endl;
     ss << "    Peak Usage: " << peak_usage / 1024 << " KBytes" << std::endl;
 
-    pse::memory::get_allocator(pse::GME_OBJECT)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
+    memory::get_allocator(GME_OBJECT)->get_statistics(total_free_memory, largest_block, number_of_allocations, peak_usage);
     ss << "  Object Allocator: " << std::endl;
     ss << "    Total Free Memory: " << total_free_memory / 1024 << " KBytes" << std::endl;
     ss << "    Largest Block: " << largest_block << " Bytes" << std::endl;

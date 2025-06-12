@@ -2,13 +2,13 @@ EE_BIN = runtime.elf
 
 
 EE_INCS= \
-		-I$(PS2LUA_SRC)/ps2gl/ee/include \
-		-I$(PS2LUA_SRC)/core/ee/include \
+		-I$(PS2ENGINE_SRC)/core/ee/include \
+		-I$(PS2ENGINE_SRC)/ps2gl/ee/include \
 
 EE_LIBS= \
-		-L$(PS2LUA_SRC)/ps2gl/ -lps2gl \
-		-L$(PS2LUA_SRC)/core/ -lcore \
-		-lpatches -ldma -ldebug -lfileXio -lpad -lmath3d -lpng -lz
+		-L$(PS2ENGINE_SRC)/core/ -lcore \
+		-L$(PS2ENGINE_SRC)/ps2gl/ -lps2gl \
+		-lpatches -ldma -ldebug -lfileXio -lpad
 
 EE_CFLAGS += -DNEWLIB_PORT_AWARE
 EE_CXXFLAGS += -DNEWLIB_PORT_AWARE 

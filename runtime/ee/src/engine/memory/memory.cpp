@@ -32,25 +32,25 @@ namespace pse
 
 void exit_handler()
 {
-    pse::log::out(pse::log::kError) << "system exit" << std::endl;
-    memory::print_statistics();
-    memory::terminate();
+    log::out(log::kError) << "system exit" << std::endl;
+    pse::memory::print_statistics();
+    pse::memory::terminate();
     g_MemorySystemInitialized = false;
 }
 
 void crash_handler()
 {
-    pse::log::out(pse::log::kError) << "system crash" << std::endl;
-    memory::print_statistics();
-    pse::log::out(pse::log::kError) << "pausing thread" << std::endl;
+    log::out(log::kError) << "system crash" << std::endl;
+    pse::memory::print_statistics();
+    log::out(log::kError) << "pausing thread" << std::endl;
     SleepThread();
 }
 
 void initialize_memory_system() 
 {
     if(g_MemorySystemInitialized) return;
-    memory::initialize();
-    memory::register_douglea_allocator(GME_OBJECT, memory::PSE_ALLOCATOR_DEFAULT, "Object Heap", 1024 * 1024 * 2);
+    pse::memory::initialize();
+    pse::memory::register_douglea_allocator(GME_OBJECT, pse::memory::PSE_ALLOCATOR_DEFAULT, "Object Heap", 1024 * 1024 * 2);
     g_MemorySystemInitialized = true;
     std::atexit(exit_handler);
     std::set_terminate(crash_handler);

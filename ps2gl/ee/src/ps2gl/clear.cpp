@@ -78,10 +78,25 @@ void glClearColor(GLclampf red,
     CClearEnv& clearEnv = pGLContext->GetImmDrawContext().GetClearEnv();
 
     using namespace Math;
-    clearEnv.SetClearColor(Clamp(red, 0.0f, 1.0f),
+    clearEnv.SetClearColor(
+        Clamp(red, 0.0f, 1.0f),
         Clamp(green, 0.0f, 1.0f),
         Clamp(blue, 0.0f, 1.0f),
-        Clamp(alpha, 0.0f, 1.0f));
+        Clamp(alpha, 0.0f, 1.0f)
+    );
+}
+
+void pglClearColor(const pse::math::color& clear)
+{
+    CClearEnv& clearEnv = pGLContext->GetImmDrawContext().GetClearEnv();
+
+    using namespace Math;
+    clearEnv.SetClearColor(
+        Clamp(clear.r, 0.0f, 1.0f),
+        Clamp(clear.g, 0.0f, 1.0f),
+        Clamp(clear.b, 0.0f, 1.0f),
+        Clamp(clear.a, 0.0f, 1.0f)
+    );
 }
 
 void glClearDepth(GLclampd depth)

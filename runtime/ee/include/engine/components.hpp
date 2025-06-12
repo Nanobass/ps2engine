@@ -18,6 +18,7 @@
 //========================================
 
 #include <string>
+#include <vector>
 
 //========================================
 // PS2SDK Includes
@@ -31,13 +32,16 @@
 #include <core/memory.hpp>
 
 #include <engine/camera.hpp>
+#include <engine/texturemanager.hpp>
+#include <engine/lightingmanager.hpp>
+#include <engine/material.hpp>
 
 namespace pse
 {
 
 struct id_component
 {
-    pse::uuid mId;
+    uuid mId;
     id_component() = default;
     id_component(const id_component&) = default;
 };
@@ -52,47 +56,75 @@ struct tag_component
 
 struct transform_component
 {
-    pse::math::vec4 mTranslation = { 0.0f, 0.0f, 0.0f, 1.0f };
-    pse::math::vec4 mRotation = { 0.0f, 0.0f, 0.0f, 0.0f };
-    pse::math::vec4 mScale = { 1.0f, 1.0f, 1.0f, 1.0f };
+    math::vec3 mTranslation = { 0.0f, 0.0f, 0.0f };
+    math::vec3 mRotation = { 0.0f, 0.0f, 0.0f };
+    math::vec3 mScale = { 1.0f, 1.0f, 1.0f };
 
     transform_component() = default;
     transform_component(const transform_component&) = default;
-    transform_component(const pse::math::vec3& translation)
-        : mTranslation(translation, 1.0F) {}
+    transform_component(const math::vec3& translation)
+        : mTranslation(translation) {}
 
-    pse::math::mat4 get_transform() const
+    math::mat4 get_transform() const
     {
-        return pse::math::transformation(mTranslation, mRotation, mScale);
+        return math::transformation(mTranslation, mRotation, mScale);
     }
-};
-
-enum camera_mode
-{
-    kOrthographic, kPerspective
 };
 
 struct camera_component
 {
-
-    bool primary = false;
-    camera_mode mode = kPerspective;
-    orthographic_camera orthographic = orthographic_camera(1.0F, 1.0F, 1.0F);
-    perspective_camera perspective = perspective_camera(90.0F, 1.0F, 4095.0F, 1.0F);
+    scene_camera mCamera;
+    bool mPrimary = true;
 
     camera_component() = default;
     camera_component(const camera_component&) = default;
+    camera_component(bool primary) 
+        : mPrimary(primary) {}
+};
+
+struct sprite_renderer_component
+{
+    texture* mTexture;
+    math::color mColor = {1.0F, 1.0F, 1.0F, 1.0F};
+    math::texel mOffset = {0.0F, 0.0F};
+    math::texel mScale = {1.0F, 1.0F};
+    bool mVisible = true;
+    
+    sprite_renderer_component() = default;
+    sprite_renderer_component(const sprite_renderer_component&) = default;
+    sprite_renderer_component(pse::texture* texture) : mTexture(texture) {}
+};
+
+struct mesh
+{
+    GLenum mMode;
+    int mCount;
+    texture* mTexture;
+    std::vector<math::vec3> mVertices, mNormals;
+    std::vector<math::vec2> mTexCoords;
 };
 
 struct mesh_renderer_component
 {
-    pse::uuid mMeshId;
+    mesh* mMesh;
 
     mesh_renderer_component() = default;
     mesh_renderer_component(const mesh_renderer_component&) = default;
+    mesh_renderer_component(mesh* mesh) 
+        : mMesh(mesh) {}
 
-    void* mRuntimeData = nullptr;
+};
 
+struct light_component
+{
+    enum light_type { kPosition, kDirectional, kSpot };
+    std::shared_ptr<light> mLight = nullptr;
+    light_type mLightType = kDirectional;
+
+    light_component() = default;
+    light_component(const light_component&) = default;
+    light_component(std::shared_ptr<light> light, light_type lightType = kDirectional) 
+        : mLight(light), mLightType(lightType) {}
 };
     
 } // namespace pse

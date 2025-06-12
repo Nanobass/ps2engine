@@ -34,71 +34,85 @@
 namespace pse
 {
 
-struct camera {
-    pse::math::mat4 mProjectionMatrix;
-    pse::math::mat4 mViewMatrix;
+class camera {
+public:
+    camera() = default;
+    camera(const math::mat4& projection)
+        : mProjectionMatrix(projection) {}
+    virtual ~camera() = default;
 
-    virtual void apply() 
-    {
-        glMatrixMode(GL_PROJECTION);
-        gluLoadMatrix(mProjectionMatrix);
-        glMatrixMode(GL_MODELVIEW);
-        gluLoadMatrix(mViewMatrix);
-    }
+    virtual const math::mat4& apply_projection() = 0;
+    const math::mat4& get_projection() const { return mProjectionMatrix; }
+protected:
+		math::mat4 mProjectionMatrix = math::mat4();
 };
 
-struct perspective_camera : public camera {
-    pse::math::vec4 mPosition, mTarget, mUp = pse::math::vec4(0.0F, 1.0F, 0.0F);
-
-    float mNearPlane, mFarPlane;
-    float mFieldOfView;
-    float mAspectRatio;
-
-    perspective_camera(float fov, float near, float far, float aspect)
-        :   mNearPlane(near)
-        ,   mFarPlane(far)
-        ,   mFieldOfView(fov)
-        ,   mAspectRatio(aspect)
-    {}
-
-    void apply() 
-    {
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        gluPerspective(mFieldOfView, mNearPlane, mFarPlane, mAspectRatio);
-        glGetFloatv(GL_PROJECTION_MATRIX, mProjectionMatrix.matrix);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        gluLookAt(mPosition, mTarget, mUp);
-        glGetFloatv(GL_MODELVIEW_MATRIX, mViewMatrix.matrix);
-    }
-};
-
-struct orthographic_camera : public camera {
-    pse::math::vec4 mPosition;
+class scene_camera : camera {
+public:
+    enum projection_mode { kOrthographic, kPerspective };
 
     float mScreenWidth, mScreenHeight;
-    float mWorldWidth, mWorldHeight;
     float mAspectRatio;
 
-    orthographic_camera(float width, float height, float aspect)
-        :   mWorldWidth(width)
-        ,   mWorldHeight(height)
-        ,   mAspectRatio(aspect)
-    {}
+    float mWorldWidth = 640.0F, mWorldHeight = 480.0F;
+    float mNearPlane = 1.0F, mFarPlane = 100.0F;
+    float mFieldOfView = 40.0F;
+    
+    projection_mode mMode = kPerspective;
 
-    void apply() 
+    scene_camera() = default;
+    scene_camera(const scene_camera&) = default;
+
+    void set_viewport(float width, float height, float aspect) 
     {
-        mScreenWidth = mWorldWidth * mAspectRatio;
-        mScreenHeight = mWorldHeight;
+        mScreenWidth = width;
+        mScreenWidth = height;
+        mAspectRatio = aspect;
+    }
+
+    void set_perspective(float fov, float near, float far)
+    {
+        mFieldOfView = fov;
+        mNearPlane = near;
+        mFarPlane = far;
+        set_projection_mode(kPerspective);
+    }
+
+    void set_orthographic(float worldWidth, float worldHeight, float near, float far)
+    {
+        mWorldWidth = worldWidth;
+        mWorldHeight = worldHeight;
+        mNearPlane = near;
+        mFarPlane = far;
+        set_projection_mode(kOrthographic);
+    }
+    
+    void set_projection_mode(projection_mode mode)
+    {
+        mMode = mode;
+        apply_projection();
+    }
+
+    static void gluPerspective(float fov, float near, float far, float aspect) 
+    {
+        float h = 2.0f * near * (float)tanf(fov * 3.141592654f / 180.0f / 2.0f);
+        float w = h * aspect;
+        glFrustum(-w / 2.0f, w / 2.0f, -h / 2.0f, h / 2.0f, near, far);
+    }
+
+    const math::mat4& apply_projection()
+    {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(-mScreenWidth / 2.0F, mScreenWidth / 2.0F, -mScreenHeight / 2.0F, mScreenHeight / 2.0F, -1.0F, 1.0F);
+        switch(mMode)
+        {
+            case kOrthographic: glOrtho(-mWorldWidth / 2.0F, mWorldWidth / 2.0F, -mWorldHeight / 2.0F, mWorldHeight / 2.0F, -1.0F, 1.0F); break;
+            case kPerspective: gluPerspective(mFieldOfView, mNearPlane, mFarPlane, mAspectRatio); break;
+        }
         glGetFloatv(GL_PROJECTION_MATRIX, mProjectionMatrix.matrix);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glGetFloatv(GL_MODELVIEW_MATRIX, mViewMatrix.matrix);
+        return mProjectionMatrix;
     }
+
 };
     
 } // namespace pse

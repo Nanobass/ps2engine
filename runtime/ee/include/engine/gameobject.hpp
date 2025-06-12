@@ -46,10 +46,9 @@ public:
     T& add_component(Args&&... args)
     {
         mErrorIf(has_component<T>(), "game_object already has component");
-        pse::memory::push_allocator(pse::GME_OBJECT);
+        memory::push_allocator(GME_OBJECT);
         T& component = mScene->mRegistry.emplace<T>(mEntityHandle, std::forward<Args>(args)...);
-        pse::memory::pop_allocator();
-        //mScene->OnComponentAdded<T>(*this, component);
+        memory::pop_allocator();
         return component;
     }
 
@@ -57,10 +56,9 @@ public:
     T& add_or_replace_component(Args&&... args)
     {
         
-        pse::memory::push_allocator(pse::GME_OBJECT);
+        memory::push_allocator(GME_OBJECT);
         T& component = mScene->mRegistry.emplace_or_replace<T>(mEntityHandle, std::forward<Args>(args)...);
-        pse::memory::pop_allocator();
-        //mScene->OnComponentAdded<T>(*this, component);
+        memory::pop_allocator();
         return component;
     }
 
@@ -81,9 +79,9 @@ public:
     void remove_component()
     {
         mErrorIf(!has_component<T>(), "game_object does not have component");
-        pse::memory::push_allocator(pse::GME_OBJECT);
+        memory::push_allocator(GME_OBJECT);
         mScene->mRegistry.remove<T>(mEntityHandle);
-        pse::memory::pop_allocator();
+        memory::pop_allocator();
     }
 
     operator bool() const { return mEntityHandle != entt::null; }

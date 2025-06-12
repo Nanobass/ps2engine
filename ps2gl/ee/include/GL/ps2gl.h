@@ -131,6 +131,23 @@ void pglDisableCustom(pglU64_t flag);
 }
 #endif // __cplusplus
 
+#ifdef __cplusplus
+
+#include <core/math.hpp>
+
+// environment
+
+void pglClearColor(const pse::math::color& clear);
+
+// matrix stack
+
+void pglLoadMatrix(const pse::math::mat4& matrix);
+void pglMultMatrix(const pse::math::mat4& matrix);
+void pglLoadMatrixCombined(const pse::math::mat4& matrix, const pse::math::mat4& inverted);
+void pglMultMatrixCombined(const pse::math::mat4& matrix, const pse::math::mat4& inverted);
+
+#endif // __cplusplus
+
 // "capabilities" (things that can be passed to pglEnable/pglDisable
 
 #define PGL_CLIPPING 2

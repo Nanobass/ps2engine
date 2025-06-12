@@ -107,12 +107,10 @@ void skybox_renderer::unload_skybox()
     mTextureManager->delete_texture(mSkyTexture->mName.mUuid);
 }
 
-void skybox_renderer::render_sky(perspective_camera& camera, bool render)
+/*void skybox_renderer::render_sky(perspective_camera& camera, bool render)
 {
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
-
-    camera.apply();
 
     if(mList && mSkyTexture && render) 
     {
@@ -131,6 +129,6 @@ void skybox_renderer::render_sky(perspective_camera& camera, bool render)
         glEnable(GL_LIGHTING);
         glDepthMask(GL_TRUE);
     }
-}
+}*/
     
 } // namespace pse

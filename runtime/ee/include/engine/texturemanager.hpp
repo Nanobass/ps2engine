@@ -184,7 +184,6 @@ struct texture_manager
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_BLEND); // free on ps2 iirc
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     }
 
     ~texture_manager()
@@ -201,16 +200,10 @@ struct texture_manager
         {
             return load_gs_texture(name, path);
         }
-        if(ends_with(path, "png"))
-        {
-            return load_png(name, path);
-        }
         throw std::exception();
     }
 
     texture* load_gs_texture(const memory::name& name, const std::string& path);
-
-    texture* load_png(const memory::name& name, const std::string& path);
 
     texture* create_texture(const memory::name& name, texture_buffer core)
     {
