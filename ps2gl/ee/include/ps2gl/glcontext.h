@@ -15,6 +15,7 @@
 #include "ps2s/packet.h"
 
 #include "GL/gl.h"
+#include "ps2gl/config.h"
 
 /********************************************
  * state change flags
@@ -137,7 +138,6 @@ class CGLContext {
     unsigned int CurrentFrameNumber;
 
     // double-buffered dma packets for rendering use
-    static const int kDmaPacketMaxQwordLength = 64 * 1024;
     static CVifSCDmaPacket *CurPacket, *LastPacket,
         *Vif1Packet, *SavedVif1Packet,
         *ImmVif1Packet;
@@ -148,14 +148,12 @@ class CGLContext {
     // If only they didn't pack so many logically distinct
     // properties into the same registers I wouldn't have to
     // do this!!  Damn!
-    static const int kMaxDrawEnvChanges = 100;
     void* DrawEnvPtrs0[kMaxDrawEnvChanges];
     void* DrawEnvPtrs1[kMaxDrawEnvChanges];
     void **CurDrawEnvPtrs, **LastDrawEnvPtrs;
     int NumCurDrawEnvPtrs, NumLastDrawEnvPtrs;
 
     // list of memory to free after this frame is finished
-    static const int kMaxBuffersToBeFreed = 1024;
     int CurBuffer;
     void* BuffersToBeFreed[2][kMaxBuffersToBeFreed];
     int NumBuffersToBeFreed[2];

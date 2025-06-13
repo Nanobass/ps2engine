@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "GL/gl.h"
+#include "ps2gl/config.h"
 #include <core/log.hpp>
 
 /********************************************
@@ -37,7 +38,6 @@ private:
     GLenum PrimType;
     ArrayType::tArrayType ArrayType;
 
-    static const int kMaxNumStrips          = 40;
     static const unsigned int kContinueFlag = 0x80000000;
     unsigned char NumStrips;
     unsigned int StripLengths[kMaxNumStrips];

@@ -17,6 +17,7 @@
 
 #include "ps2gl/base_renderer.h"
 #include "ps2gl/renderer.h"
+#include "ps2gl/config.h"
 
 /********************************************
  * CRendererManager
@@ -44,9 +45,7 @@ class CRendererManager {
     CRendererProps RendererRequirements;
     bool RendererReqsHaveChanged;
     uint64_t CurUserPrimReqs, CurUserPrimReqMask;
-
-    static const int kMaxDefaultRenderers = 64;
-    static const int kMaxUserRenderers    = PGL_MAX_CUSTOM_RENDERERS;
+    
     tRenderer DefaultRenderers[kMaxDefaultRenderers];
     tRenderer UserRenderers[kMaxUserRenderers];
     int NumDefaultRenderers, NumUserRenderers;

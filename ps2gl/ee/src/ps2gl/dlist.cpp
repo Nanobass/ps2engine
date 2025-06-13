@@ -50,7 +50,7 @@ CDmaPacket&
 CDList::GetVertexBuf()
 {
     if (VertexBuf == NULL)
-        VertexBuf = new CDmaPacket(kBufferMaxQwordLength, DMAC::Channels::vif1,
+        VertexBuf = new CDmaPacket(kDListBufferMaxQwordLength, DMAC::Channels::vif1,
             Core::MemMappings::UncachedAccl);
     return *VertexBuf;
 }
@@ -59,7 +59,7 @@ CDmaPacket&
 CDList::GetNormalBuf()
 {
     if (NormalBuf == NULL)
-        NormalBuf = new CDmaPacket(kBufferMaxQwordLength, DMAC::Channels::vif1,
+        NormalBuf = new CDmaPacket(kDListBufferMaxQwordLength, DMAC::Channels::vif1,
             Core::MemMappings::UncachedAccl);
     return *NormalBuf;
 }
@@ -68,7 +68,7 @@ CDmaPacket&
 CDList::GetTexCoordBuf()
 {
     if (TexCoordBuf == NULL)
-        TexCoordBuf = new CDmaPacket(kBufferMaxQwordLength, DMAC::Channels::vif1,
+        TexCoordBuf = new CDmaPacket(kDListBufferMaxQwordLength, DMAC::Channels::vif1,
             Core::MemMappings::UncachedAccl);
     return *TexCoordBuf;
 }
@@ -77,7 +77,7 @@ CDmaPacket&
 CDList::GetColorBuf()
 {
     if (ColorBuf == NULL)
-        ColorBuf = new CDmaPacket(kBufferMaxQwordLength, DMAC::Channels::vif1,
+        ColorBuf = new CDmaPacket(kDListBufferMaxQwordLength, DMAC::Channels::vif1,
             Core::MemMappings::UncachedAccl);
     return *ColorBuf;
 }
@@ -115,10 +115,10 @@ CDListManager::GenLists(int numLists)
     NextFreeListID += numLists;
 
     // wrap around and hope for the best.. (relying on ListsAreFree to do error checking)
-    if (NextFreeListID == kMaxListID - 1)
+    if (NextFreeListID == kMaxDListID - 1)
         NextFreeListID = 1;
 
-    mErrorIf(NextFreeListID >= kMaxListID, "Ran out of lists.. time to rewrite this code.");
+    mErrorIf(NextFreeListID >= kMaxDListID, "Ran out of lists.. time to rewrite this code.");
 
     return firstID;
 }

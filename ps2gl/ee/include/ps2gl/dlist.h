@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "GL/gl.h"
+#include "ps2gl/config.h"
 #include <core/log.hpp>
 #include "ps2s/packet.h"
 
@@ -102,8 +103,7 @@ public:
  */
 
 class CDListCmdBlock {
-    static const int ByteSize = 2048;
-    char Memory[ByteSize];
+    char Memory[kDListByteSize];
     char* MemCursor;
     int BytesLeft;
     CDListCmdBlock* NextBlock;
@@ -111,7 +111,7 @@ class CDListCmdBlock {
 public:
     CDListCmdBlock()
         : MemCursor(Memory)
-        , BytesLeft(ByteSize)
+        , BytesLeft(kDListByteSize)
         , NextBlock(NULL)
     {
         CEmptyListCmd empty;
@@ -155,12 +155,10 @@ CNextBlockCmd::Play()
  */
 
 class CDList {
-    static const int kBufferMaxQwordLength = 16 * 1024; // 256kb
     CDmaPacket *VertexBuf, *NormalBuf, *TexCoordBuf, *ColorBuf;
     CDListCmdBlock *FirstCmdBlock, *CurCmdBlock;
-    static const int kMaxNumRenderPackets = 512;
     int NumRenderPackets;
-    CVifSCDmaPacket* RenderPackets[kMaxNumRenderPackets];
+    CVifSCDmaPacket* RenderPackets[kDListMaxNumRenderPackets];
 
 public:
     CDList();
@@ -217,22 +215,20 @@ public:
  */
 
 class CDListManager {
-    static const int kMaxListID = 4096;
     int NextFreeListID;
-    CDList* Lists[kMaxListID];
+    CDList* Lists[kMaxDListID];
     unsigned int OpenListID;
     CDList* OpenList;
 
     bool ListsAreFree(int firstListID, int numLists);
 
-    static const int kMaxBuffersToBeFreed = 1024;
-    CDList* ListsToBeFreed[2][kMaxBuffersToBeFreed];
+    CDList* ListsToBeFreed[2][kMaxDListsToBeFreed];
     int NumListsToBeFreed[2];
     int CurBuffer;
 
     inline void AddListToBeFreed(CDList* dlist)
     {
-        mAssert(NumListsToBeFreed[CurBuffer] < kMaxBuffersToBeFreed);
+        mAssert(NumListsToBeFreed[CurBuffer] < kMaxDListsToBeFreed);
         ListsToBeFreed[CurBuffer][NumListsToBeFreed[CurBuffer]++] = dlist;
     }
 
@@ -243,7 +239,7 @@ public:
         , OpenList(NULL)
         , CurBuffer(0)
     {
-        for (int i           = 0; i < kMaxListID; i++)
+        for (int i           = 0; i < kMaxDListID; i++)
             Lists[i]         = NULL;
         NumListsToBeFreed[0] = NumListsToBeFreed[1] = 0;
     }

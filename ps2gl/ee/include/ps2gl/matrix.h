@@ -12,6 +12,7 @@
 
 #include "ps2gl/drawcontext.h"
 #include "ps2gl/glcontext.h"
+#include "ps2gl/config.h"
 
 /********************************************
  * CMatrixStack
@@ -22,8 +23,7 @@ class CGLContext;
 class CMatrixStack {
 protected:
     CGLContext& GLContext;
-    static const int MaxStackDepth = 16;
-    pse::math::mat4 Matrices[MaxStackDepth], InverseMatrices[MaxStackDepth];
+    pse::math::mat4 Matrices[kMaxMatStackDepth], InverseMatrices[kMaxMatStackDepth];
     int CurStackDepth;
 
 public:
@@ -64,7 +64,7 @@ public:
 
     void Push()
     {
-        mErrorIf(CurStackDepth == MaxStackDepth - 1,
+        mErrorIf(CurStackDepth == kMaxMatStackDepth - 1,
             "No room on stack!");
         Matrices[CurStackDepth + 1]        = Matrices[CurStackDepth];
         InverseMatrices[CurStackDepth + 1] = InverseMatrices[CurStackDepth];

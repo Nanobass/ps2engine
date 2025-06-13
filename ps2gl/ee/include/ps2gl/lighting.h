@@ -15,6 +15,7 @@
 #include "ps2gl/dlgmanager.h"
 #include "ps2gl/glcontext.h"
 #include "ps2gl/immgmanager.h"
+#include "ps2gl/config.h"
 
 class CGLContext;
 
@@ -190,7 +191,6 @@ public:
 class CLighting {
 protected:
     CGLContext& GLContext;
-    static const int NumLights = 8;
 
 public:
     CLighting(CGLContext& context)
@@ -215,7 +215,7 @@ class CImmLighting : public CLighting {
     pse::math::vec4 CurrentColor;
     pse::math::vec4 GlobalAmbient;
     CImmLight Light0, Light1, Light2, Light3, Light4, Light5, Light6, Light7;
-    CImmLight* Lights[NumLights];
+    CImmLight* Lights[kMaxNumLights];
     bool IsEnabled;
     int NumLightsWithNonzeroSpecular;
 
@@ -229,7 +229,7 @@ public:
 
     CImmLight& GetImmLight(int num)
     {
-        mAssert(num < NumLights);
+        mAssert(num < kMaxNumLights);
         return *Lights[num];
     }
     CLight& GetLight(int num) { return GetImmLight(num); }
@@ -259,7 +259,7 @@ public:
 
 class CDListLighting : public CLighting {
     CDListLight Light0, Light1, Light2, Light3, Light4, Light5, Light6, Light7;
-    CDListLight* Lights[NumLights];
+    CDListLight* Lights[kMaxNumLights];
 
     inline void TellRendererLightPropChanged()
     {
@@ -271,7 +271,7 @@ public:
 
     CDListLight& GetDListLight(int num)
     {
-        mAssert(num < NumLights);
+        mAssert(num < kMaxNumLights);
         return *Lights[num];
     }
     CLight& GetLight(int num) { return GetDListLight(num); }

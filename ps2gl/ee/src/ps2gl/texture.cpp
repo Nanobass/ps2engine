@@ -31,7 +31,7 @@ CTexManager::CTexManager(CGLContext& context)
     , TexMode(GS::TexMode::kModulate)
 {
     // clear the texture name entries
-    for (int i      = 0; i < NumTexNames; i++)
+    for (int i      = 0; i < kMaxNumTexNames; i++)
         TexNames[i] = NULL;
 
     // create the default texture
@@ -45,7 +45,7 @@ CTexManager::~CTexManager()
     if (CurClut)
         delete CurClut;
 
-    for (int i = 0; i < NumTexNames; i++) {
+    for (int i = 0; i < kMaxNumTexNames; i++) {
         if (TexNames[i])
             delete TexNames[i];
     }
@@ -111,7 +111,7 @@ void CTexManager::GenTextures(GLsizei numNewTexNames, GLuint* newTexNames)
     for (int curTexName = 0; curTexName < numNewTexNames; curTexName++) {
         // find the next free tex name and assign it
         int i;
-        for (i = 0; i < NumTexNames; i++) {
+        for (i = 0; i < kMaxNumTexNames; i++) {
             // 0 is a reserved tex name in OGL -- don't alloc it
             if (Cursor != 0 && TexNames[Cursor] == NULL)
                 break;
@@ -119,11 +119,11 @@ void CTexManager::GenTextures(GLsizei numNewTexNames, GLuint* newTexNames)
             IncCursor();
         }
         // did we go through all the names without finding any free ones?
-        if (i == NumTexNames) {
+        if (i == kMaxNumTexNames) {
             mError("No free texture names.  Time to write a less braindead tex manager.");
 
             // In release build, return sensible names on failure
-            while (i < NumTexNames) {
+            while (i < kMaxNumTexNames) {
                 newTexNames[i] = 0;
                 ++i;
             }

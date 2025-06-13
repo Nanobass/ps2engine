@@ -11,6 +11,7 @@
 #include "ps2s/texture.h"
 
 #include "GL/gl.h"
+#include "ps2gl/config.h"
 
 /********************************************
  * CTexManager
@@ -27,15 +28,14 @@ class CTexManager {
     bool IsTexEnabled;
     bool InsideDListDef;
 
-    static const int NumTexNames = 512; // :TODO: Make configurable
-    CMMTexture* TexNames[NumTexNames];
+    CMMTexture* TexNames[kMaxNumTexNames];
     unsigned int Cursor;
 
     CMMTexture *DefaultTex, *CurTexture, *LastTexSent;
     CMMClut* CurClut;
     GS::tTexMode TexMode;
 
-    void IncCursor() { Cursor = (Cursor + 1) & (NumTexNames - 1); }
+    void IncCursor() { Cursor = (Cursor + 1) & (kMaxNumTexNames - 1); }
 
 public:
     CTexManager(CGLContext& context);
