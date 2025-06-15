@@ -130,10 +130,26 @@ void scene::render()
         //pglLoadMatrixCombined(viewMatrix.inverted(), viewMatrix);
     }
     else log::out(log::kError) << "no camera present" << std::endl;
+    
+    mRenderManager->mLightingManager->set_lighting_enabled(false);
+    
+    if(trCamera && gcCamera)
+    {
+        auto view = mRegistry.view<transform_component, skybox_component>();
+        for(auto& entity : view)
+        {
+            auto [transform, skybox] = view.get<transform_component, skybox_component>(entity);
+            if(!skybox.mSkyTexture) continue;
+            mRenderManager->mSkyboxRenderer->set_sky_texture(skybox.mSkyTexture);
+            mRenderManager->mSkyboxRenderer->render_sky(trCamera->mTranslation);
+        }
+    } else glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    mRenderManager->mLightingManager->set_lighting_enabled(true);
 
     {
         auto view = mRegistry.view<transform_component, light_component>();
-        for(auto entity : view)
+        for(auto& entity : view)
         {
             auto [transform, light] = view.get<transform_component, light_component>(entity);
             if(!light.mLight) continue;
@@ -159,7 +175,7 @@ void scene::render()
 
     {
         auto view = mRegistry.view<transform_component, mesh_renderer_component>();
-        for(auto entity : view)
+        for(auto& entity : view)
         {
             auto [transform, mesh] = view.get<transform_component, mesh_renderer_component>(entity);
             if(!mesh.mMesh) continue;
@@ -175,7 +191,7 @@ void scene::render()
 
     {
         auto view = mRegistry.view<transform_component, sprite_renderer_component>();
-        for(auto entity : view)
+        for(auto& entity : view)
         {
             auto [transform, sprite] = view.get<transform_component, sprite_renderer_component>(entity);
             if(!sprite.mTexture) continue;

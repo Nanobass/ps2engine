@@ -1,0 +1,28 @@
+var class_c_imm_geom_manager =
+[
+    [ "CImmGeomManager", "class_c_imm_geom_manager.html#a365341f1ea6bb589838c4c5e02feb7bf", null ],
+    [ "~CImmGeomManager", "class_c_imm_geom_manager.html#aa098011366e4fff817e390ed8c78f553", null ],
+    [ "BeginGeom", "class_c_imm_geom_manager.html#aace75f6cee94c30fb5efd76850658130", null ],
+    [ "Color", "class_c_imm_geom_manager.html#a19a88ca855f646727b11db9318c10a04", null ],
+    [ "DisableCustom", "class_c_imm_geom_manager.html#aede9b09f5f6c26e733b7b1a7a3cc7251", null ],
+    [ "DrawArrays", "class_c_imm_geom_manager.html#ad648a5df7c2d011e18de062496047166", null ],
+    [ "DrawIndexedArrays", "class_c_imm_geom_manager.html#a7332fbb31c0f104570f60b0aedc650cd", null ],
+    [ "DrawingIndexedArray", "class_c_imm_geom_manager.html#acb285a0408513363a89d62c93e84dc77", null ],
+    [ "DrawingLinearArray", "class_c_imm_geom_manager.html#a739cb49e8716d46b89e65f90895d9daa", null ],
+    [ "EnableCustom", "class_c_imm_geom_manager.html#a778dc89926db54017277fe2348ea8193", null ],
+    [ "EndGeom", "class_c_imm_geom_manager.html#af37b894106789442a15bb17f5a3fe004", null ],
+    [ "Flush", "class_c_imm_geom_manager.html#af43cb45baead01cd09049bb78c359170", null ],
+    [ "GetNormalBuf", "class_c_imm_geom_manager.html#a8a2471ccf49c5d048a58140ffe98a35b", null ],
+    [ "GetRendererManager", "class_c_imm_geom_manager.html#a64d7046c9ed69140a911ed06d1c500e6", null ],
+    [ "GetTexCoordBuf", "class_c_imm_geom_manager.html#a049929ee16f13a5ab8fa8222525bfefe", null ],
+    [ "Normal", "class_c_imm_geom_manager.html#a565b1ac930a0f297b87b5b308472cfc4", null ],
+    [ "PrimChanged", "class_c_imm_geom_manager.html#aacae4592fbc132c6f8fe767c44568b49", null ],
+    [ "SwapBuffers", "class_c_imm_geom_manager.html#a3427799d68e97004a3919f6245533ff2", null ],
+    [ "SyncArrayType", "class_c_imm_geom_manager.html#a6a0ebd1554656a73080ab302aa75a8a4", null ],
+    [ "SyncColorMaterial", "class_c_imm_geom_manager.html#ab1bd02c1df3da60150f4f043b61009b2", null ],
+    [ "SyncGsContext", "class_c_imm_geom_manager.html#a39dd9ff76c74634e19ec4a2768bc2efd", null ],
+    [ "SyncRenderer", "class_c_imm_geom_manager.html#af27a65aff184047b8b0c462c43f45ce8", null ],
+    [ "SyncRendererContext", "class_c_imm_geom_manager.html#aee6a9b166e83681c9fb97225f47cd566", null ],
+    [ "TexCoord", "class_c_imm_geom_manager.html#a572fc3eb7277caa19ba5ada5a87533ec", null ],
+    [ "Vertex", "class_c_imm_geom_manager.html#acf6bfdd0fcd729ddee4ccff5a1ed86c5", null ]
+];

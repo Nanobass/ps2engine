@@ -40,6 +40,7 @@
 #include <engine/material.hpp>
 #include <engine/camera.hpp>
 #include <engine/renderer/font.hpp>
+#include <engine/renderer/basic.hpp>
 #include <engine/renderer/skybox.hpp>
 #include <engine/renderer/sprite.hpp>
 
@@ -51,7 +52,6 @@
 /* ps2gl */
 #include <GL/gl.h>
 #include <GL/ps2gl.h>
-#include <GL/ps2glu.hpp>
 
 namespace ps2
 {
@@ -83,6 +83,7 @@ struct render_manager {
     std::unique_ptr<lighting_manager> mLightingManager;
 
     std::unique_ptr<text_renderer> mTextRenderer;
+    std::unique_ptr<basic_renderer> mBasicRenderer;
     std::unique_ptr<skybox_renderer> mSkyboxRenderer;
     std::unique_ptr<sprite_renderer> mSpriteRenderer;
 
@@ -125,8 +126,11 @@ struct render_manager {
         mLightingManager = std::make_unique<lighting_manager>();
 
         mTextRenderer = std::make_unique<text_renderer>(mTextureManager.get());
-        //mSkyboxRenderer = std::make_unique<skybox_renderer>(mTextureManager.get(), mLightingManager.get());
+        mBasicRenderer = std::make_unique<basic_renderer>();
+        mSkyboxRenderer = std::make_unique<skybox_renderer>();
         mSpriteRenderer = std::make_unique<sprite_renderer>(mTextureManager.get());
+        
+        glEnable(GL_RESCALE_NORMAL);
     }  
 
     ~render_manager()
@@ -134,6 +138,7 @@ struct render_manager {
         log::out(log::kInfo) << "terminating ps2gl" << std::endl;
         mSpriteRenderer.reset();
         mSkyboxRenderer.reset();
+        mBasicRenderer.reset();
         mTextRenderer.reset();
         mLightingManager.reset();
         mModelManager.reset();

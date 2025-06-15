@@ -1,0 +1,28 @@
+var class_c_sprite =
+[
+    [ "CSprite", "class_c_sprite.html#a940e00de1dda2ccb57c73083b0d6c1fa", null ],
+    [ "Draw", "class_c_sprite.html#aca24c843c11cb85b0b84cbcf98ea3a7e", null ],
+    [ "Draw", "class_c_sprite.html#a9b0c8c7dc5e9039d470b83f938b4f242", null ],
+    [ "Draw", "class_c_sprite.html#ab6aaef41208755628a93165832a452a6", null ],
+    [ "GetPacket", "class_c_sprite.html#a6b1eb222082eef5e7467e438d9b18cd6", null ],
+    [ "operator delete", "class_c_sprite.html#abcb65238088049e13d3434979b4668ce", null ],
+    [ "operator new", "class_c_sprite.html#a5e817780a9afc2cce68bf1426443c1e5", null ],
+    [ "SetColor", "class_c_sprite.html#a4866893186c0f01e5476cd562ba0b845", null ],
+    [ "SetColor", "class_c_sprite.html#ad4f1af4c20dfd7486c586c69e94e7457", null ],
+    [ "SetDepth", "class_c_sprite.html#ae71b87acf52e1006d10cd822e2b6ed72", null ],
+    [ "SetSTQs", "class_c_sprite.html#a9868c10a52ef06945b6ba33d0c2d4322", null ],
+    [ "SetUseAlphaBlend", "class_c_sprite.html#a3ff935a1a265fc3e255bbf9a73ebf02d", null ],
+    [ "SetUseFog", "class_c_sprite.html#a09e53d2db996cc565dbf645ad23234ac", null ],
+    [ "SetUseTexture", "class_c_sprite.html#aa06cd401a087dbb14543214da4bea821", null ],
+    [ "SetUVs", "class_c_sprite.html#a7ff65a7d34bc47aada8fa88cee0f2b70", null ],
+    [ "SetUVs", "class_c_sprite.html#a854beda7aae0a77f0705caa5b9b91ada", null ],
+    [ "SetUVs", "class_c_sprite.html#af2e1829f7c2aa41c2727b3468f7927d1", null ],
+    [ "SetUVsFix4", "class_c_sprite.html#ab976e5be29f0ae36cb0ec92548ab18b1", null ],
+    [ "SetVertices", "class_c_sprite.html#a2070570602e0bfd2475bca9e1d596c36", null ],
+    [ "Color", "class_c_sprite.html#addb1d19eef09e020ed8575e5ff94d1cd", null ],
+    [ "DrawGifTag", "class_c_sprite.html#afdcb3dc58e6bba26f146cb48f46e34ad", null ],
+    [ "TexCoords1", "class_c_sprite.html#a35ae4fdaca26d885586131b6b54c5503", null ],
+    [ "TexCoords2", "class_c_sprite.html#a670d8ecc44a5cf8d2b7c729a5c6d7b37", null ],
+    [ "Vertex1", "class_c_sprite.html#a4bcb2318d2e77a0e0837c98b66b8d07e", null ],
+    [ "Vertex2", "class_c_sprite.html#ac84889d7b384600849c4f8766dd60807", null ]
+];

@@ -24,16 +24,20 @@
 namespace pse
 {
 
-void skybox_renderer::load_skybox(const std::string& img, float size, int divisions)
+void skybox_renderer::set_sky_texture(const texture_ptr& texture)
 {
-    if(mList || mSkyTexture) unload_skybox();
+    mSkyTexture = texture;
+}
+
+void skybox_renderer::load_skybox(float size, int divisions)
+{
+    if(mDList) { glDeleteLists(mDList, 1); mDList = 0; }
+    if(!mDList) mDList = glGenLists(1);
 
     float subSize = size / (float) divisions;
 
-    //mSkyTexture = mTextureManager->load_texture(img, img);
-
-    mList = glGenLists(1);
-    glNewList(mList, GL_COMPILE);
+    mDList = glGenLists(1);
+    glNewList(mDList, GL_COMPILE);
     glBegin(GL_QUADS);
     // chatgpt is the best, wrap shit in a dlist for moa pafomance
     for (int face = 0; face < 6; ++face) {
@@ -103,32 +107,33 @@ void skybox_renderer::load_skybox(const std::string& img, float size, int divisi
 
 void skybox_renderer::unload_skybox()
 {
-    glDeleteLists(mList, 1);
-    //mTextureManager->delete_texture(mSkyTexture->mName.mUuid);
+    glDeleteLists(mDList, 1);
+    mDList = 0;
 }
 
-/*void skybox_renderer::render_sky(perspective_camera& camera, bool render)
+void skybox_renderer::render_sky(const math::vec3& cameraPosition)
 {
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    if(mList && mSkyTexture && render) 
+    if(mSkyTexture) mSkyTexture->bind();
+    if(mDList) 
     {
         glDisable(GL_CULL_FACE);
-        glDisable(GL_LIGHTING);
         glDepthMask(GL_FALSE);
 
         mSkyTexture->bind();
         glPushMatrix();
-        glTranslatef(camera.mPosition.x, camera.mPosition.y, camera.mPosition.z);
-        glCallList(mList);
+        glTranslatef(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+        glCallList(mDList);
         glPopMatrix();
+
+        // Free the texture after rendering, probably not needed anymore
         pglFreeTexture(mSkyTexture->mGLName);
     
         glEnable(GL_CULL_FACE);
-        glEnable(GL_LIGHTING);
         glDepthMask(GL_TRUE);
     }
-}*/
+}
     
 } // namespace pse

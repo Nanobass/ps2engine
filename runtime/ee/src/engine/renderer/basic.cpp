@@ -21,17 +21,20 @@
 // Project Includes
 //========================================
 
+#include <GL/ps2gl.h>
+#include <GL/gl.h>
+
 namespace pse
 {
 
-void BasicRenderer::Clear(const math::color& color)
+void basic_renderer::clear(const math::color& color)
 {
     pglClearColor(color);
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void BasicRenderer::DrawPoint(float x, float y, const math::color& color)
+void basic_renderer::draw_point(float x, float y, const math::color& color)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_POINTS);
@@ -41,7 +44,7 @@ void BasicRenderer::DrawPoint(float x, float y, const math::color& color)
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawLine(float x1, float y1, float x2, float y2, const math::color& color)
+void basic_renderer::draw_line(float x1, float y1, float x2, float y2, const math::color& color)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_LINES);
@@ -53,7 +56,7 @@ void BasicRenderer::DrawLine(float x1, float y1, float x2, float y2, const math:
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawRectangle(float x, float y, float width, float height, const math::color& color)
+void basic_renderer::draw_rectangle(float x, float y, float width, float height, const math::color& color)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_LINES);
@@ -77,7 +80,7 @@ void BasicRenderer::DrawRectangle(float x, float y, float width, float height, c
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::FillRectangle(float x, float y, float width, float height, const math::color& color)
+void basic_renderer::fill_rectangle(float x, float y, float width, float height, const math::color& color)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
@@ -93,7 +96,7 @@ void BasicRenderer::FillRectangle(float x, float y, float width, float height, c
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawTriangle(float x1, float y1, float x2, float y2, float x3, float y3, const math::color& color1, const math::color& color2, const math::color& color3)
+void basic_renderer::draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, const math::color& color1, const math::color& color2, const math::color& color3)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_LINES);
@@ -113,7 +116,7 @@ void BasicRenderer::DrawTriangle(float x1, float y1, float x2, float y2, float x
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, const math::color& color1, const math::color& color2, const math::color& color3)
+void basic_renderer::fill_triangle(float x1, float y1, float x2, float y2, float x3, float y3, const math::color& color1, const math::color& color2, const math::color& color3)
 {
     glDisable(GL_TEXTURE_2D);
     glBegin(GL_TRIANGLES);
@@ -127,17 +130,17 @@ void BasicRenderer::FillTriangle(float x1, float y1, float x2, float y2, float x
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawCircle(float x, float y, float width, float height, const math::color& color)
+void basic_renderer::draw_circle(float x, float y, float width, float height, const math::color& color)
 {
-    DrawArc(x, y, width, height, 0.0F, 360.0F, color);
+    draw_arc(x, y, width, height, 0.0F, 360.0F, color);
 }
 
-void BasicRenderer::FillCircle(float x, float y, float width, float height, const math::color& color)
+void basic_renderer::fill_circle(float x, float y, float width, float height, const math::color& color)
 {
-    FillArc(x, y, width, height, 0.0F, 360.0F, color);
+    fill_arc(x, y, width, height, 0.0F, 360.0F, color);
 }
 
-void BasicRenderer::DrawArc(float x, float y, float width, float height, float angle1, float angle2, const math::color& color)
+void basic_renderer::draw_arc(float x, float y, float width, float height, float angle1, float angle2, const math::color& color)
 {
     float radius = (width + height) / 2;
     int n = radius < 48 ? 12 : (radius / 4);
@@ -162,7 +165,7 @@ void BasicRenderer::DrawArc(float x, float y, float width, float height, float a
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::FillArc(float x, float y, float width, float height, float angle1, float angle2, const math::color& color)
+void basic_renderer::fill_arc(float x, float y, float width, float height, float angle1, float angle2, const math::color& color)
 {
     float radius = (width + height) / 2;
     int n = radius < 48 ? 12 : (radius / 4);
@@ -189,7 +192,7 @@ void BasicRenderer::FillArc(float x, float y, float width, float height, float a
     glEnable(GL_TEXTURE_2D);
 }
 
-void BasicRenderer::DrawImage(float x, float y, float width, float height, texture* image, const math::color& color)
+void basic_renderer::draw_image(float x, float y, float width, float height, texture_ptr image, const math::color& color)
 {
     image->bind();
     glBegin(GL_QUADS);
@@ -209,12 +212,12 @@ void BasicRenderer::DrawImage(float x, float y, float width, float height, textu
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void BasicRenderer::DrawImageRotated(float x, float y, float width, float height, float angle, texture* image, const math::color& color)
+void basic_renderer::draw_image_rotated(float x, float y, float width, float height, float angle, texture_ptr image, const math::color& color)
 {
     glTranslatef(width / 2.0F, -height / 2.0F, 0.0F);
     glRotatef(angle, 0.0F, 0.0F, 1.0F);
     glTranslatef(-width / 2.0F, height / 2.0F, 0.0F);
-    DrawImage(x, y, width, height, image, color);
+    draw_image(x, y, width, height, image, color);
 }
 
 } // namespace pse

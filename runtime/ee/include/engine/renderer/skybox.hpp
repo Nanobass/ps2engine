@@ -34,34 +34,34 @@
 /* ps2gl */
 #include <GL/gl.h>
 #include <GL/ps2gl.h>
-#include <GL/ps2glu.hpp>
 
 namespace pse
 {
 
 struct skybox_renderer
 {
-    texture_manager* mTextureManager;
+    texture_ptr mSkyTexture = nullptr;
+    GLuint mDList = 0;
 
-    texture* mSkyTexture = nullptr;
-
-    GLuint mList = 0;
-
-    skybox_renderer(texture_manager* textureManager) 
-        :   mTextureManager(textureManager)
+    skybox_renderer()
     {
+        load_skybox();
+        log::out(log::kInfo) << "skybox renderer initialized" << std::endl;
     }
 
     ~skybox_renderer()
     {
-        if(mList || mSkyTexture) unload_skybox();
+        if(mDList) glDeleteLists(mDList, 1);
+        log::out(log::kInfo) << "skybox renderer terminated" << std::endl;
     }
 
-    void load_skybox(const std::string& img, float size = 16.0F, int divisions = 16);
+    void set_sky_texture(const texture_ptr& texture);
+
+    void load_skybox(float size = 16.0F, int divisions = 16);
 
     void unload_skybox();
 
-    // void render_sky(perspective_camera& camera, bool render = true);
+    void render_sky(const math::vec3& cameraPosition);
 
 };
     

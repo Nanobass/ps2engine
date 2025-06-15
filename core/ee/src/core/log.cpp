@@ -72,21 +72,14 @@ bool is_log_level_enabled(log_level level)
     return (g_LogLevelMask >> level) & 1;
 }
 
-std::ostream& out(log_device device, log_level level, const char* file, const int line)
+std::ostream& out(log_level level, const char* file, const int line)
 {
     if(!is_log_level_enabled(level))
     {
         return g_NullOutput;
     }
 
-    // i hate compilers
-    std::ostream* osp = &g_NullOutput;
-    switch(device)
-    {
-        case kIOP: osp = &std::cout; break;
-        case kEE: /* add ee sio for memory leak server */ ; break;
-    }
-    std::ostream& os = *osp;
+    std::ostream& os = std::cout;
     
     switch(level)
     {
@@ -98,11 +91,6 @@ std::ostream& out(log_device device, log_level level, const char* file, const in
     os << " " << file << ":" << line << ":";
     os << " ";
     return os;
-}
-
-std::ostream& out(log_level level, const char* file, const int line)
-{
-    return out(g_DefaultDevice, level, file, line);
 }
     
 } // namespace pse::log

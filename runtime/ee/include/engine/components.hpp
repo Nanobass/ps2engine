@@ -119,5 +119,15 @@ struct light_component
     light_component(light_ptr light, light_type lightType = kDirectional) 
         : mLight(light), mLightType(lightType) {}
 };
+
+struct skybox_component
+{
+    texture_ptr mSkyTexture = nullptr;
+
+    skybox_component() = default;
+    skybox_component(const skybox_component&) = default;
+    skybox_component(texture_ptr skyTexture) 
+        : mSkyTexture(skyTexture) {}
+};
     
 } // namespace pse

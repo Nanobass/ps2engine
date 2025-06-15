@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['calloc_0',['cALLOc',['../dlheap_8c.html#a52e36be72dcd7883b874d8909c06099b',1,'dlheap.c']]],
+  ['cfree_1',['cFREe',['../dlheap_8c.html#ab55542b5a224212d54354d61dcdd552d',1,'dlheap.c']]],
+  ['check_5fchunk_2',['check_chunk',['../dlheap_8c.html#a1faba5971a73f6b951def40c74c4460a',1,'dlheap.c']]],
+  ['check_5ffree_5fchunk_3',['check_free_chunk',['../dlheap_8c.html#a2795fcf53b90483b5c66bebd83a7ecb1',1,'dlheap.c']]],
+  ['check_5finuse_5fchunk_4',['check_inuse_chunk',['../dlheap_8c.html#abb35eabd5fa212462d07b9055881df25',1,'dlheap.c']]],
+  ['check_5fmalloc_5fstate_5',['check_malloc_state',['../dlheap_8c.html#ac432687ec968e5ad0a46c1356665527a',1,'dlheap.c']]],
+  ['check_5fmalloced_5fchunk_6',['check_malloced_chunk',['../dlheap_8c.html#afe9a87accc5ccc1474cdde647bf4cbb2',1,'dlheap.c']]],
+  ['check_5fremalloced_5fchunk_7',['check_remalloced_chunk',['../dlheap_8c.html#a705f5f2089bfac9cc5437e91fa25db89',1,'dlheap.c']]],
+  ['checked_5frequest2size_8',['checked_request2size',['../dlheap_8c.html#a7b56f96dcb78d6b0f5c74e3e236d3c34',1,'dlheap.c']]],
+  ['chunk2mem_9',['chunk2mem',['../dlheap_8c.html#accb5f8e767e1e6ca196937cd24f8a1e2',1,'dlheap.c']]],
+  ['chunk_5fat_5foffset_10',['chunk_at_offset',['../dlheap_8c.html#adf0ed8ec142910aed073d3fcac842543',1,'dlheap.c']]],
+  ['chunk_5fis_5fmmapped_11',['chunk_is_mmapped',['../dlheap_8c.html#a1accd83738152ade5cb47aa5c61ede79',1,'dlheap.c']]],
+  ['chunksize_12',['chunksize',['../dlheap_8c.html#a0bd05b2720a9f79a0c066086c4f7e2fa',1,'dlheap.c']]],
+  ['clear_5ffastchunks_13',['clear_fastchunks',['../dlheap_8c.html#a4a7743b457d83f59d60512e38dd18fdc',1,'dlheap.c']]],
+  ['clear_5finuse_14',['clear_inuse',['../dlheap_8c.html#a3373f3cdb259f76c5338a9903a2fa668',1,'dlheap.c']]],
+  ['clear_5finuse_5fbit_5fat_5foffset_15',['clear_inuse_bit_at_offset',['../dlheap_8c.html#a06b309b8186426a6fe6695e5b5aec19f',1,'dlheap.c']]],
+  ['contiguous_16',['contiguous',['../dlheap_8c.html#a018dccaf8e290123228adfadbed6dfc3',1,'dlheap.c']]]
+];

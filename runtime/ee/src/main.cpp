@@ -41,7 +41,6 @@
 /* ps2gl */
 #include <GL/ps2gl.h>
 #include <GL/gl.h>
-#include <GL/ps2glu.hpp>
 
 /* ps2stuff */
 #include <ps2s/gs.h>
@@ -52,6 +51,7 @@
 
 #include <core/log.hpp>
 #include <core/math.hpp>
+#include <core/perfmon.hpp>
 
 #include <engine/memory/memory.hpp>
 #include <engine/memory/metrics.hpp>
@@ -76,7 +76,6 @@ pse::font_ptr g_DefaultFont;
 pse::scene* g_Scene = nullptr;
 
 #include <tiny_obj_loader.h>
-
 pse::mesh_ptr load_obj(const pse::memory::resource_id& id, const std::string& objFile, const std::string& dir)
 {
     pse::mesh_ptr mesh = g_RenderManager->mModelManager->create_mesh(id);
@@ -104,18 +103,14 @@ pse::mesh_ptr load_obj(const pse::memory::resource_id& id, const std::string& ob
         lut[material.name] = std::pair<pse::material_ptr, pse::texture_ptr>(mat, tex);
     }
 
-    printf("alloc\n");
-
     for(auto& shape : shapes)
     {
         if(shape.mesh.material_ids.empty()) continue;
         std::pair<pse::material_ptr, pse::texture_ptr> mat = lut[materials[shape.mesh.material_ids[0]].name];
         pse::sub_mesh& sub = mesh->mSubMeshes.emplace_back(mat.first, mat.second, GL_TRIANGLES, shape.mesh.indices.size(), shape.mesh.indices.size());
-        printf("sub %s\n", materials[shape.mesh.material_ids[0]].name.c_str());
         int j = 0;
         for(auto& i : shape.mesh.indices)
         {
-            printf("%d\n", j);
             pse::math::vec3 position = {
                 attributes.vertices[i.vertex_index * 3],
                 attributes.vertices[i.vertex_index * 3 + 1],
@@ -142,7 +137,8 @@ pse::mesh_ptr load_obj(const pse::memory::resource_id& id, const std::string& ob
 int main(int argc, char const *argv[]) 
 {
     pse::initialize_memory_system();
-    pse::memory::set_tracking(false, 0, "initialiation");
+    pse::perfmon::initialize(false);
+    pse::memory::set_tracking(true, 0);
 
     SifLoadModule("host0:/irx/sio2man.irx", 0, NULL);
     SifLoadModule("host0:/irx/padman.irx", 0, NULL);
@@ -152,9 +148,11 @@ int main(int argc, char const *argv[])
 
     bool bCloseRequested = false;
 
+    pse::memory::set_tracking(true, 1);
     g_RenderManager = std::make_unique<pse::render_manager>();
     g_InputManager = std::make_unique<pse::input::input_manager>();
 
+    pse::memory::set_tracking(true, 2);
     {
         pse::texture_ptr fontTex = g_RenderManager->mTextureManager->load_gs_texture("emotion.gs", "emotion.gs");
         g_DefaultFont = g_RenderManager->mTextRenderer->load_font("emotion.fnt", "emotion.fnt", fontTex, 32.0F, 39.0F);
@@ -162,6 +160,7 @@ int main(int argc, char const *argv[])
     
     /* create scene */
 
+    pse::memory::set_tracking(true, 3);
     g_Scene = new(pse::GME_OBJECT) pse::scene(g_RenderManager.get());
 
     pse::game_object goCamera = g_Scene->create_entity("Camera");
@@ -172,20 +171,23 @@ int main(int argc, char const *argv[])
 
     pse::game_object goLight = g_Scene->create_entity("Sun");
     pse::transform_component& trLight = goLight.get_component<pse::transform_component>();
-    pse::light_component& lcLight = goLight.add_component<pse::light_component>(g_RenderManager->mLightingManager->allocate_light(), pse::light_component::kDirectional);
     trLight.mRotation.set(3.1415f / 4.0f, 3.1415f / 4.0f, 0);
+    pse::light_component& lcLight = goLight.add_component<pse::light_component>(g_RenderManager->mLightingManager->allocate_light(), pse::light_component::kDirectional);
     lcLight.mLight->mAmbient.set(0.0F, 0.0F, 0.0F, 1.0F);
     lcLight.mLight->mDiffuse.set(1.0F, 1.0F, 1.0F, 1.0F);
     lcLight.mLight->mSpecular.set(0.0F, 0.0F, 0.0F, 1.0F);
+    pse::skybox_component& sbLight = goLight.add_component<pse::skybox_component>();
+    sbLight.mSkyTexture = g_RenderManager->mTextureManager->load_gs_texture("sky.gs", "sky.gs");
 
     pse::game_object goPlayer = g_Scene->create_entity("Player");
-    goPlayer.add_component<pse::mesh_renderer_component>(load_obj("LVL0.obj", "LVL0.obj", ""));
+    goPlayer.add_component<pse::mesh_renderer_component>(load_obj("Hub_normals.obj", "Hub_normals.obj", ""));
 
     /* metrics stuff */
 
     std::string metrics = "";
     int frameCounter = 0;
 
+    pse::memory::set_tracking(true, 5);
     do {
         pad.Poll();
         //g_InputManager->poll_controllers();
@@ -217,14 +219,6 @@ int main(int argc, char const *argv[])
 
         /* rendering loop */
         g_RenderManager->begin_frame();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glEnable(GL_RESCALE_NORMAL);
-        
-        glEnable(GL_LIGHTING);
 
         /* render scene */
         g_Scene->render();
@@ -232,6 +226,8 @@ int main(int argc, char const *argv[])
         /* draw debug text */
         {
             glDisable(GL_LIGHTING);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
 
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
@@ -265,6 +261,7 @@ int main(int argc, char const *argv[])
     g_RenderManager.reset();
 
     pse::memory::print_statistics();
+    pse::perfmon::terminate();
 
     return 0;
 }

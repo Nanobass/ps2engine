@@ -33,7 +33,6 @@
 /* ps2gl */
 #include <GL/gl.h>
 #include <GL/ps2gl.h>
-#include <GL/ps2glu.hpp>
 
 /* ps2stuff */
 #include <ps2s/gs.h>
@@ -41,12 +40,6 @@
 
 namespace pse
 {
-
-inline bool ends_with(std::string const & value, std::string const & ending)
-{
-    if (ending.size() > value.size()) return false;
-    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
 
 struct texture_buffer
 {

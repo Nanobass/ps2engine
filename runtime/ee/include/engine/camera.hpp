@@ -29,7 +29,6 @@
 /* ps2gl */
 #include <GL/gl.h>
 #include <GL/ps2gl.h>
-#include <GL/ps2glu.hpp>
 
 namespace pse
 {

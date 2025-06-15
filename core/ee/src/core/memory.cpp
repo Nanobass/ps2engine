@@ -23,7 +23,37 @@
 // Project Includes
 //========================================
 
-extern size_t GetFreeSize(void);
+#include <core/perfmon.hpp>
+
+// extern size_t GetFreeSize(void);
+
+namespace pse::perfmon::messages
+{
+
+struct allocation : public message
+{
+    pse::memory::allocator_id mAllocatorId;
+    uint32_t mTrackingId = 0;
+    size_t mSize;
+    void* mPtr;
+
+    allocation(pse::memory::allocator_id alloc, size_t size, void* ptr, uint32_t trackingId = 0)
+        : message(kMemoryAllocation), mAllocatorId(alloc), mSize(size), mPtr(ptr), mTrackingId(trackingId) {}
+};
+
+struct deallocation : public message
+{
+    pse::memory::allocator_id mAllocatorId;
+    uint32_t mTrackingId = 0;
+    size_t mSize;
+    void* mPtr;
+
+    deallocation(pse::memory::allocator_id alloc, size_t size, void* ptr, uint32_t trackingId = 0)
+        : message(kMemoryDeallocation), mAllocatorId(alloc), mSize(size), mPtr(ptr), mTrackingId(trackingId) {}
+};
+    
+} // namespace pse::perfmon::messages
+
 
 namespace pse::memory
 {
@@ -40,8 +70,7 @@ out_of_memory_callback_t * g_OutOfMemoryCallback = nullptr;
 void* g_OutOfMemoryCallbackArgs = nullptr;
 
 bool g_TrackingEnabled = false;
-size_t g_TrackingThreshold = 0;
-const char* g_TrackingName = nullptr;
+uint32_t g_TrackingId = 0;
 
 default_allocator g_DefaultAllocatorInstance;
 
@@ -59,28 +88,6 @@ void check_allocator(allocator_id alloc)
     if (!g_Allocators[alloc]) throw std::runtime_error("invalid allocator");
 }
 
-bool do_tracking(size_t size)
-{
-    if (!g_TrackingEnabled) return false;
-    if (size < g_TrackingThreshold) return false;
-    return true;
-}
-
-void track_memory(const char* action, size_t size, allocator* alloc)
-{
-    if (do_tracking(size))
-    {
-        if(g_TrackingName)
-        {
-            log::out(log::kDebug) << g_TrackingName << ": " << action << " " << size << " bytes on " << alloc->get_name() << std::endl;
-        }
-        else
-        {
-            log::out(log::kDebug) << action << " " << size << " bytes on " << alloc->get_name() << std::endl;
-        }
-    }
-}
-
 void initialize()
 {
     if(g_MemoryFoundationInitialized) throw std::runtime_error("memory system already initialized");
@@ -93,9 +100,12 @@ void initialize()
 
 void terminate()
 {
+    pse::log::terminate();
     g_MemoryFoundationInitialized = false;
     unregister_allocator(PSE_ALLOCATOR_DEFAULT);
 }
+
+void out_of_memory_callback(allocator_id alloc, size_t size);
 
 void* allocate(allocator_id alloc, size_t size)
 {
@@ -108,7 +118,11 @@ void* allocate(allocator_id alloc, size_t size)
         throw std::bad_alloc();
     }
     size_t actual_size = allocator_ptr->get_allocation_size(ptr);
-    track_memory("allocated", actual_size, allocator_ptr);
+    if(g_TrackingEnabled)
+    {
+        pse::perfmon::messages::allocation msg(alloc, actual_size, ptr, g_TrackingId);
+        pse::perfmon::post_message(msg, sizeof(msg));
+    }
     return ptr;
 }
 
@@ -123,7 +137,11 @@ void deallocate(allocator_id alloc, void* ptr)
     allocator* allocator_ptr = g_Allocators[alloc];
     size_t actual_size = allocator_ptr->get_allocation_size(ptr);
     allocator_ptr->deallocate(ptr);
-    track_memory("freed", actual_size, allocator_ptr);
+    if(g_TrackingEnabled)
+    {
+        pse::perfmon::messages::deallocation msg(alloc, actual_size, ptr, g_TrackingId);
+        pse::perfmon::post_message(msg, sizeof(msg));
+    }
 }
 
 void deallocate(void* ptr)
@@ -133,7 +151,11 @@ void deallocate(void* ptr)
     allocator* allocator_ptr = g_Allocators[alloc];
     size_t actual_size = allocator_ptr->get_allocation_size(ptr);
     allocator_ptr->deallocate(ptr);
-    track_memory("freed", actual_size, allocator_ptr);
+    if(g_TrackingEnabled)
+    {
+        pse::perfmon::messages::deallocation msg(alloc, actual_size, ptr, g_TrackingId);
+        pse::perfmon::post_message(msg, sizeof(msg));
+    }
 }
 
 allocator_id get_default_allocator()
@@ -202,13 +224,10 @@ void set_current_allocator(allocator_id alloc)
     else g_AllocatorStack[g_AllocatorStackIndex - 1] = alloc;
 }
 
-void set_tracking(bool enabled, size_t threshold, const char* name)
+void set_tracking(bool enabled, uint32_t trackingId)
 {
     g_TrackingEnabled = enabled;
-    g_TrackingThreshold = threshold;
-    g_TrackingName = name;
-    if (enabled) log::out(log::kDebug) << "tracking enabled with threshold: " << threshold << " bytes" << std::endl;
-    else log::out(log::kDebug) << "tracking disabled" << std::endl;
+    g_TrackingId = trackingId;
 }
 
 void print_statistics()
@@ -261,7 +280,7 @@ void out_of_memory_callback(allocator_id alloc, size_t size)
     if (g_OutOfMemoryCallback) g_OutOfMemoryCallback(alloc, size, g_OutOfMemoryCallbackArgs);
     else
     {
-        log::out(log::kDebug) << "out of memory in allocator " << alloc << " requested size " << size << std::endl;
+        log::out(log::kError) << "out of memory in allocator " << alloc << " requested size " << size << std::endl;
         print_statistics();
         throw std::runtime_error("out of memory");
     }
