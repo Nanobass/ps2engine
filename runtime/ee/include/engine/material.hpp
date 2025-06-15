@@ -32,22 +32,20 @@
 /* core */
 #include <core/log.hpp>
 #include <core/math.hpp>
+#include <core/memory.hpp>
 
 namespace pse
 {
 
 struct material
 {
+    memory::resource_id mId;
     math::color mAmbient, mDiffuse, mSpecular, mEmission;
     float mShininess;
     GLenum mColorMaterial;
     
-    material(const math::color& ambient, const math::color& diffuse, const math::color& specular = math::color(1,1,1), const math::color& emission = math::color(0,0,0), float shininess = 0.0F)
-        : mAmbient(ambient), mDiffuse(diffuse), mSpecular(specular), mEmission(emission), mShininess(shininess), mColorMaterial(0)
-    {}
-
-    material(const math::color& specular = math::color(1,1,1), const math::color& emission = math::color(0,0,0), float shininess = 0.0F)
-        : mAmbient(0, 0, 0), mDiffuse(0, 0, 0), mSpecular(specular), mEmission(emission), mShininess(shininess), mColorMaterial(GL_DIFFUSE)
+    material(const memory::resource_id& id, const math::color& ambient, const math::color& diffuse, const math::color& specular, const math::color& emission, float shininess, GLenum colorMaterial)
+        : mId(id), mAmbient(ambient), mDiffuse(diffuse), mSpecular(specular), mEmission(emission), mShininess(shininess), mColorMaterial(colorMaterial)
     {}
 
     void apply()
@@ -65,5 +63,55 @@ struct material
     }
 
 };
+
+using material_ptr = std::shared_ptr<material>;
+
+class material_manager;
+
+struct material_deleter
+{
+    material_manager* mMaterialManager;
+    inline void operator()(material* m);
+};
+
+class material_manager
+{
+public:
+    material_manager() {}
+
+    ~material_manager()
+    {
+        mMaterials.clear();
+    }
+
+    material_ptr create_material(const memory::resource_id& id, const math::color& ambient, const math::color& diffuse, const math::color& specular, const math::color& emission, float shininess, GLenum colorMaterial)
+    {
+        material_ptr m = material_ptr(new material(id, ambient, diffuse, specular, emission, shininess, colorMaterial), material_deleter{this});
+        mMaterials[id.mUuid] = m;
+        return m;
+    }
+
+    material_ptr find_material(const uuid& uuid)
+    {
+        auto it = mMaterials.find(uuid);
+        return it->second.lock();
+    }
+
+    void delete_material(const uuid& uuid)
+    {
+        auto it = mMaterials.find(uuid);
+        if(it->second.expired()) mMaterials.erase(it);
+    }
+
+private:
+    // gotta love c++
+    std::map<uuid, std::weak_ptr<material>> mMaterials;
+};
+
+inline void material_deleter::operator()(material* m) 
+{ 
+    mMaterialManager->delete_material(m->mId.mUuid);
+    delete m;
+}
     
 } // namespace pse

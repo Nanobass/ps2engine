@@ -34,23 +34,23 @@
 namespace pse
 {
 
-font* text_renderer::load_font(const memory::name& name, const std::string& fnt, const std::string& img, float size, float lineHeight)
+font_ptr text_renderer::load_font(const memory::resource_id& id, const std::string& fntFile, texture_ptr img, float size, float lineHeight)
 {
-    std::unique_ptr<font> font = std::make_unique<pse::font>(name);
-    font->mFontTexture = mTextureManager->load_texture(img, img);
-    font->mFontTexture->set_filter(GL_NEAREST);
-    font->mSize = size;
-    font->mLineHeight = lineHeight / size;
+    font_ptr fnt = font_ptr(new font(id), font_deleter{this});
+    fnt->mFontTexture = img;
+    fnt->mFontTexture->set_filter(GL_NEAREST);
+    fnt->mSize = size;
+    fnt->mLineHeight = lineHeight / size;
 
-    glBindTexture(GL_TEXTURE_2D, font->mFontTexture->mGLName);
+    glBindTexture(GL_TEXTURE_2D, fnt->mFontTexture->mGLName);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    float texWidth = font->mFontTexture->get_width();
-    float texHeight = font->mFontTexture->get_height();
+    float texWidth = fnt->mFontTexture->get_width();
+    float texHeight = fnt->mFontTexture->get_height();
 
-    std::ifstream file(fnt);
+    std::ifstream file(fntFile);
 
     std::string line;
     std::getline(file, line); // info...
@@ -99,7 +99,7 @@ font* text_renderer::load_font(const memory::name& name, const std::string& fnt,
         std::getline(ss, value, ' ');
         xadvance = std::stoi(value);
 
-        glyph& glyph = font->mGlyphs[id];
+        glyph& glyph = fnt->mGlyphs[id];
         glyph.mU1 = (float) x / texWidth;
         glyph.mV1 = (float) y / texHeight;
         glyph.mU2 = glyph.mU1 + (float) width / texWidth;
@@ -111,23 +111,22 @@ font* text_renderer::load_font(const memory::name& name, const std::string& fnt,
         glyph.mXAdvance = (float) xadvance / size;
     }
     
-    pse::font* ret = font.get();
-    mFonts[name.mUuid] = std::move(font);
-    return ret;
+    mFonts[id.mUuid] = fnt;
+    return fnt;
 }
 
-void text_renderer::draw_string(font* font, std::string string)
+void text_renderer::draw_string(font_ptr fnt, const std::string& string)
 {
     float x = 0.0F, y = 0.0F;
 
     glDisable(GL_DEPTH_TEST);
 
-    font->mFontTexture->bind();
+    fnt->mFontTexture->bind();
     
     glBegin(GL_QUADS);
     for(auto chr : string)
     {
-        glyph glyph = font->mGlyphs[chr];
+        glyph glyph = fnt->mGlyphs[chr];
 
         if(chr == '\n')
         {

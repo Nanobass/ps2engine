@@ -52,33 +52,6 @@ extern "C" {
     extern size_t dlmalloc_usable_size(void* ptr);
 }
 
-namespace pse
-{
-class uuid
-{
-public:
-    uuid() : mUuid(rand()) {}
-    uuid(uint32_t uuid) : mUuid(uuid) {}
-    uuid(const uuid&) = default;
-    operator uint32_t() const { return mUuid; }
-private:
-    uint32_t mUuid;
-};
-} // namespace pse
-
-namespace std {
-	template <typename T> struct hash;
-
-	template<>
-	struct hash<pse::uuid>
-	{
-		std::size_t operator()(const pse::uuid& uuid) const
-		{
-			return (uint32_t) uuid;
-		}
-	};
-}
-
 namespace pse::memory
 {
 
@@ -522,20 +495,62 @@ private:
     allocator_id mAlloc;
 };
 
+} // namespace pse::memory
+
+//========================================
+// Types
+//========================================
+
+namespace pse
+{
+class uuid
+{
+public:
+    uuid() : mUuid(rand()) {}
+    uuid(uint32_t uuid) : mUuid(uuid) {}
+    uuid(const uuid&) = default;
+    operator uint32_t() const { return mUuid; }
+private:
+    uint32_t mUuid;
+};
+} // namespace pse
+
+namespace std {
+	template <typename T> struct hash;
+
+	template<>
+	struct hash<pse::uuid>
+	{
+		std::size_t operator()(const pse::uuid& uuid) const
+		{
+			return (uint32_t) uuid;
+		}
+	};
+} // namespace std
+
+namespace pse::memory {
+
 uint32_t joaat(const std::string& str);
 
-struct name
+struct resource_id
 {
     std::string mName;
     uuid mUuid;
 
-    name(const std::string& name) 
+    resource_id(const std::string& name) 
         : mName(name), mUuid(joaat(name))
     {}
 
-    name(const char* name)
-        : mName(name), mUuid(joaat(mName))
+    resource_id(const char* name) 
+        : mName(name), mUuid(joaat(name))
     {}
+
+    operator uint32_t() const { return mUuid; }
+
+    friend std::ostream& operator<<(std::ostream& os, const resource_id& id)
+    {
+        return os << "\"" << id.mName << "\" (" << (uint32_t) id.mUuid << ")";
+    }
 
 };
 
@@ -557,7 +572,7 @@ public:
     }
 
     // no copying, no, ONLY EXPLICIT COPYING, WE DO NOT HAVE GIGABYTES OF SYSTEM MEMORY
-    explicit buffer(const buffer& other) = delete;
+    buffer(const buffer& other) = delete;
     buffer& operator=(const buffer& other) = delete;
 
     // moving is fine and kinda required without copying
@@ -622,6 +637,11 @@ public:
     std::size_t size() const
     {
         return mSize;
+    }
+
+    bool emtpy() const
+    {
+        return mSize == 0;
     }
 
     T* data() const

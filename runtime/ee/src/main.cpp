@@ -64,55 +64,58 @@
 #include <engine/input/input.hpp>
 #include <engine/input/padman.hpp>
 
+#include <engine/modelmanager.hpp>
+
 #include <ps2pad.hpp>
 
 std::unique_ptr<pse::render_manager> g_RenderManager = nullptr;
+std::unique_ptr<pse::input::input_manager> g_InputManager = nullptr;
 
-struct orthographic_camera {
-    pse::math::mat4 mProjectionMatrix;
-    pse::math::mat4 mViewMatrix;
+pse::font_ptr g_DefaultFont;
 
-    pse::math::vec4 mPosition;
+pse::scene* g_Scene = nullptr;
 
-    float mScreenWidth, mScreenHeight;
-    float mWorldWidth, mWorldHeight;
-    float mAspectRatio;
+#include <tiny_obj_loader.h>
 
-    orthographic_camera(float width, float height, float aspect)
-        :   mWorldWidth(width)
-        ,   mWorldHeight(height)
-        ,   mAspectRatio(aspect)
-    {}
-
-    void apply() 
-    {
-        mScreenWidth = mWorldWidth * mAspectRatio;
-        mScreenHeight = mWorldHeight;
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(-mScreenWidth / 2.0F, mScreenWidth / 2.0F, -mScreenHeight / 2.0F, mScreenHeight / 2.0F, -1.0F, 1.0F);
-        glGetFloatv(GL_PROJECTION_MATRIX, mProjectionMatrix.matrix);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glGetFloatv(GL_MODELVIEW_MATRIX, mViewMatrix.matrix);
-    }
-};
-
-#include "tiny_obj_loader.h"
-
-pse::mesh* load_obj(const std::string& objFile, const std::string& mtlDir)
+pse::mesh_ptr load_obj(const pse::memory::resource_id& id, const std::string& objFile, const std::string& dir)
 {
-    pse::mesh* mesh = new pse::mesh;
+    pse::mesh_ptr mesh = g_RenderManager->mModelManager->create_mesh(id);
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warnings;
     std::string errors;
-    tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, objFile.c_str(), mtlDir.c_str());
+    tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, objFile.c_str(), dir.c_str());
+
+    std::map<std::string, std::pair<pse::material_ptr, pse::texture_ptr>> lut;
+
+    for(auto& material : materials)
+    {
+        pse::math::color ambient = pse::math::color(material.ambient[0], material.ambient[1], material.ambient[2]);
+        pse::math::color diffuse = pse::math::color(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+        pse::math::color specular = pse::math::color(material.specular[0], material.specular[1], material.specular[2]); 
+        pse::math::color emmision = pse::math::color(material.emission[0], material.emission[1], material.emission[2]);
+        pse::material_ptr mat = g_RenderManager->mMaterialManager->create_material(id.mName + material.name, ambient, diffuse, specular, emmision, material.shininess, 0);
+        pse::texture_ptr tex = nullptr;
+        if(!material.diffuse_texname.empty())
+        {
+            tex = g_RenderManager->mTextureManager->load_gs_texture(dir + "/" + material.diffuse_texname, dir + "/" + material.diffuse_texname);
+        }
+        lut[material.name] = std::pair<pse::material_ptr, pse::texture_ptr>(mat, tex);
+    }
+
+    printf("alloc\n");
+
     for(auto& shape : shapes)
     {
+        if(shape.mesh.material_ids.empty()) continue;
+        std::pair<pse::material_ptr, pse::texture_ptr> mat = lut[materials[shape.mesh.material_ids[0]].name];
+        pse::sub_mesh& sub = mesh->mSubMeshes.emplace_back(mat.first, mat.second, GL_TRIANGLES, shape.mesh.indices.size(), shape.mesh.indices.size());
+        printf("sub %s\n", materials[shape.mesh.material_ids[0]].name.c_str());
+        int j = 0;
         for(auto& i : shape.mesh.indices)
         {
+            printf("%d\n", j);
             pse::math::vec3 position = {
                 attributes.vertices[i.vertex_index * 3],
                 attributes.vertices[i.vertex_index * 3 + 1],
@@ -127,27 +130,19 @@ pse::mesh* load_obj(const std::string& objFile, const std::string& mtlDir)
                 attributes.texcoords[i.texcoord_index * 2],
                 1.0F - attributes.texcoords[i.texcoord_index * 2 + 1],
             };
-            mesh->mVertices.push_back(position);
-            mesh->mTexCoords.push_back(texCoord);
-            mesh->mNormals.push_back(normal);
+            sub.mVertexBuffer[j] = position;
+            sub.mNormalBuffer[j] = normal;
+            sub.mTexCoordBuffer[j] = texCoord;
+            j++;
         }
     }
-    mesh->mMode = GL_TRIANGLES;
-    mesh->mCount = mesh->mVertices.size();
     return mesh;
 }
-
-pse::input::input_manager* g_InputManager = nullptr;
-
-pse::font* g_DefaultFont = nullptr;
-pse::texture* g_KEKW = nullptr;
-
-pse::scene* g_Scene = nullptr;
 
 int main(int argc, char const *argv[]) 
 {
     pse::initialize_memory_system();
-    pse::memory::set_tracking(true, 0, "initialiation");
+    pse::memory::set_tracking(false, 0, "initialiation");
 
     SifLoadModule("host0:/irx/sio2man.irx", 0, NULL);
     SifLoadModule("host0:/irx/padman.irx", 0, NULL);
@@ -158,29 +153,13 @@ int main(int argc, char const *argv[])
     bool bCloseRequested = false;
 
     g_RenderManager = std::make_unique<pse::render_manager>();
-    g_InputManager = new pse::input::input_manager();
+    g_InputManager = std::make_unique<pse::input::input_manager>();
 
-    /* load assets */
-
-    g_DefaultFont = g_RenderManager->mTextRenderer->load_font("emotion", "emotion.fnt", "emotion.gs", 32.0F, 39.0F);
-    g_KEKW = g_RenderManager->mTextureManager->load_texture("kekw", "kekw.gs");
-
-    pse::memory::set_tracking(false, 0);
-    pse::mesh* hub = load_obj("Hub_normals.obj", "");
-    hub->mTexture = g_RenderManager->mTextureManager->load_texture("high", "High.gs");
-    pse::memory::set_tracking(true, 0, "initialiation");
-
-    pse::material* material = new pse::material(
-        pse::math::color(1.0F, 1.0F, 1.0F, 1.0F),
-        pse::math::color(1.0F, 1.0F, 1.0F, 1.0F),
-        pse::math::color(0.0F, 0.0F, 0.0F, 1.0F),
-        pse::math::color(0.0F, 0.0F, 0.0F, 1.0F),
-        0.0F
-    );
+    {
+        pse::texture_ptr fontTex = g_RenderManager->mTextureManager->load_gs_texture("emotion.gs", "emotion.gs");
+        g_DefaultFont = g_RenderManager->mTextRenderer->load_font("emotion.fnt", "emotion.fnt", fontTex, 32.0F, 39.0F);
+    }
     
-    pse::math::color ambient = pse::math::color(0.2F, 0.2F, 0.2F, 1.0F);
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient.vector);
-
     /* create scene */
 
     g_Scene = new(pse::GME_OBJECT) pse::scene(g_RenderManager.get());
@@ -193,21 +172,20 @@ int main(int argc, char const *argv[])
 
     pse::game_object goLight = g_Scene->create_entity("Sun");
     pse::transform_component& trLight = goLight.get_component<pse::transform_component>();
-    pse::light_component lcLight = goLight.add_component<pse::light_component>(g_RenderManager->mLightingManager->allocate_light(), pse::light_component::kDirectional);
+    pse::light_component& lcLight = goLight.add_component<pse::light_component>(g_RenderManager->mLightingManager->allocate_light(), pse::light_component::kDirectional);
     trLight.mRotation.set(3.1415f / 4.0f, 3.1415f / 4.0f, 0);
     lcLight.mLight->mAmbient.set(0.0F, 0.0F, 0.0F, 1.0F);
     lcLight.mLight->mDiffuse.set(1.0F, 1.0F, 1.0F, 1.0F);
     lcLight.mLight->mSpecular.set(0.0F, 0.0F, 0.0F, 1.0F);
 
     pse::game_object goPlayer = g_Scene->create_entity("Player");
-    goPlayer.add_component<pse::mesh_renderer_component>(hub);
+    goPlayer.add_component<pse::mesh_renderer_component>(load_obj("LVL0.obj", "LVL0.obj", ""));
 
     /* metrics stuff */
 
     std::string metrics = "";
     int frameCounter = 0;
 
-    pse::memory::set_tracking(false);
     do {
         pad.Poll();
         //g_InputManager->poll_controllers();
@@ -247,24 +225,29 @@ int main(int argc, char const *argv[])
         glEnable(GL_RESCALE_NORMAL);
         
         glEnable(GL_LIGHTING);
-        material->apply();
 
         /* render scene */
         g_Scene->render();
        
         /* draw debug text */
         {
-            orthographic_camera hudCamera = orthographic_camera(640.0F, 480.0F, g_RenderManager->mAspectRatio);
-            hudCamera.apply();
+            glDisable(GL_LIGHTING);
+
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrtho(-320.0F * g_RenderManager->mAspectRatio, 320.0F * g_RenderManager->mAspectRatio, -240.0F, 240.0F, -1.0F, 1.0F);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+
             glPushMatrix();
-            glTranslatef(-hudCamera.mScreenWidth / 2.0F, hudCamera.mScreenHeight / 2.0F, 0.0F);
+            glTranslatef(-320.0F * g_RenderManager->mAspectRatio, 240.0F, 0.0F);
             glScalef(24.0F, 24.0F, 1.0F);
             glTranslatef(0.0F, -1.0F, 0.0F);
             g_RenderManager->mTextRenderer->draw_string(g_DefaultFont, metrics);
             glPopMatrix();
 
             glPushMatrix();
-            glTranslatef(-hudCamera.mScreenWidth / 2.0F, -hudCamera.mScreenHeight / 2.0F, 0.0F);
+            glTranslatef(-320.0F * g_RenderManager->mAspectRatio, -240.0F, 0.0F);
             glScalef(24.0F, 24.0F, 1.0F);
             glTranslatef(0.0F, 1.0F, 0.0F);
             g_RenderManager->mTextRenderer->draw_string(g_DefaultFont, debug_info.str());
@@ -274,14 +257,11 @@ int main(int argc, char const *argv[])
         g_RenderManager->end_frame();
     } while (!bCloseRequested);
 
-    pse::memory::set_tracking(true, 0, "terminate");
-    
     delete g_Scene;
 
-    g_RenderManager->mTextureManager->delete_texture(g_KEKW->mName.mUuid);
-    g_RenderManager->mTextRenderer->delete_font(g_DefaultFont->mName.mUuid);
-
-    delete g_InputManager;
+    g_DefaultFont = nullptr;
+    
+    g_InputManager.reset();
     g_RenderManager.reset();
 
     pse::memory::print_statistics();

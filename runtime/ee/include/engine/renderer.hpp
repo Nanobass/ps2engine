@@ -35,6 +35,7 @@
 
 /* engine */
 #include <engine/texturemanager.hpp>
+#include <engine/modelmanager.hpp>
 #include <engine/lightingmanager.hpp>
 #include <engine/material.hpp>
 #include <engine/camera.hpp>
@@ -77,6 +78,8 @@ struct render_manager {
     float mAspectRatio;
 
     std::unique_ptr<texture_manager> mTextureManager;
+    std::unique_ptr<material_manager> mMaterialManager;
+    std::unique_ptr<model_manager> mModelManager;
     std::unique_ptr<lighting_manager> mLightingManager;
 
     std::unique_ptr<text_renderer> mTextRenderer;
@@ -117,6 +120,8 @@ struct render_manager {
         pglSetDisplayBuffers(PGL_INTERLACED, frame_area_0, frame_area_1);
 
         mTextureManager = std::make_unique<texture_manager>(240, 512);
+        mMaterialManager = std::make_unique<material_manager>();
+        mModelManager = std::make_unique<model_manager>();
         mLightingManager = std::make_unique<lighting_manager>();
 
         mTextRenderer = std::make_unique<text_renderer>(mTextureManager.get());
@@ -131,6 +136,8 @@ struct render_manager {
         mSkyboxRenderer.reset();
         mTextRenderer.reset();
         mLightingManager.reset();
+        mModelManager.reset();
+        mMaterialManager.reset();
         mTextureManager.reset();
         pglFinish();
     }

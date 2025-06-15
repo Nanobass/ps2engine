@@ -49,48 +49,58 @@ struct glyph {
 };
 
 struct font {
-    memory::name mName;
-    texture* mFontTexture;
+    memory::resource_id mId;
+    texture_ptr mFontTexture;
     std::array<glyph, 128> mGlyphs;
     float mSize, mLineHeight;
 
-    font(memory::name name) 
-        : mName(name)
+    font(memory::resource_id id) 
+        : mId(id)
     {}
 
 };
 
+using font_ptr = std::shared_ptr<font>;
+
+class text_renderer;
+
+struct font_deleter
+{
+    text_renderer* mTextRenderer;
+    inline void operator()(font* fnt);
+};
+
+
 struct text_renderer {
     
-    std::map<uuid, std::unique_ptr<font>> mFonts;
+    std::map<uuid, std::weak_ptr<font>> mFonts;
     texture_manager* mTextureManager;
 
-    text_renderer(texture_manager* textureManager) : mTextureManager(textureManager)
+    text_renderer(texture_manager* textureManager) : mTextureManager(textureManager) {}
+
+    ~text_renderer() {}
+
+    void draw_string(font_ptr font, const std::string& string);
+
+    font_ptr load_font(const memory::resource_id& name, const std::string& fnt, texture_ptr img, float size, float lineHeight);
+
+    font_ptr find_font(const uuid& uuid)
     {
-        for(auto& e : mFonts)
-        {
-            font* font = e.second.get();
-            mTextureManager->delete_texture(font->mFontTexture->mName.mUuid);
-        }
-        mFonts.clear();
+        auto it = mFonts.find(uuid);
+        return it->second.lock();
     }
-
-    ~text_renderer()
-    {
-
-    }
-
-    void draw_string(font* font, std::string string);
-
-    font* load_font(const memory::name& name, const std::string& fnt, const std::string& img, float size, float lineHeight);
 
     void delete_font(uint32_t name)
     {
         auto it = mFonts.find(name);
-        font* font = it->second.get();
-        mTextureManager->delete_texture(font->mFontTexture->mName.mUuid);
-        mFonts.erase(it);
+        if(it->second.expired()) mFonts.erase(it);
     }
 };
+
+inline void font_deleter::operator()(font* fnt)
+{ 
+    mTextRenderer->delete_font(fnt->mId.mUuid);
+    delete fnt;
+}
     
 } // namespace pse

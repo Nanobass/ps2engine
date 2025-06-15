@@ -34,6 +34,7 @@
 #include <engine/camera.hpp>
 #include <engine/texturemanager.hpp>
 #include <engine/lightingmanager.hpp>
+#include <engine/modelmanager.hpp>
 #include <engine/material.hpp>
 
 namespace pse
@@ -84,7 +85,7 @@ struct camera_component
 
 struct sprite_renderer_component
 {
-    texture* mTexture;
+    texture_ptr mTexture;
     math::color mColor = {1.0F, 1.0F, 1.0F, 1.0F};
     math::texel mOffset = {0.0F, 0.0F};
     math::texel mScale = {1.0F, 1.0F};
@@ -92,25 +93,17 @@ struct sprite_renderer_component
     
     sprite_renderer_component() = default;
     sprite_renderer_component(const sprite_renderer_component&) = default;
-    sprite_renderer_component(pse::texture* texture) : mTexture(texture) {}
+    sprite_renderer_component(texture_ptr texture) : mTexture(texture) {}
 };
 
-struct mesh
-{
-    GLenum mMode;
-    int mCount;
-    texture* mTexture;
-    std::vector<math::vec3> mVertices, mNormals;
-    std::vector<math::vec2> mTexCoords;
-};
 
 struct mesh_renderer_component
 {
-    mesh* mMesh;
+    mesh_ptr mMesh;
 
     mesh_renderer_component() = default;
     mesh_renderer_component(const mesh_renderer_component&) = default;
-    mesh_renderer_component(mesh* mesh) 
+    mesh_renderer_component(mesh_ptr mesh) 
         : mMesh(mesh) {}
 
 };
@@ -118,12 +111,12 @@ struct mesh_renderer_component
 struct light_component
 {
     enum light_type { kPosition, kDirectional, kSpot };
-    std::shared_ptr<light> mLight = nullptr;
+    light_ptr mLight = nullptr;
     light_type mLightType = kDirectional;
 
     light_component() = default;
     light_component(const light_component&) = default;
-    light_component(std::shared_ptr<light> light, light_type lightType = kDirectional) 
+    light_component(light_ptr light, light_type lightType = kDirectional) 
         : mLight(light), mLightType(lightType) {}
 };
     

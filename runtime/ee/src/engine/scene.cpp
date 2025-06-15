@@ -162,17 +162,13 @@ void scene::render()
         for(auto entity : view)
         {
             auto [transform, mesh] = view.get<transform_component, mesh_renderer_component>(entity);
-            if(!mesh.mMesh || mesh.mMesh->mVertices.empty()) continue;
+            if(!mesh.mMesh) continue;
             glPushMatrix();
             pglMultMatrix(transform.get_transform());
-            mesh.mMesh->mTexture->bind();
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glVertexPointer(3, GL_FLOAT, 0, mesh.mMesh->mVertices.data());
-            glEnableClientState(GL_NORMAL_ARRAY);
-            pglNormalPointer(3, GL_FLOAT, 0, mesh.mMesh->mNormals.data());
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2, GL_FLOAT, 0, mesh.mMesh->mTexCoords.data());
-            glDrawArrays(mesh.mMesh->mMode, 0, mesh.mMesh->mCount);
+            for(auto& sub : mesh.mMesh->mSubMeshes)
+            {
+                sub.draw_arrays();
+            }
             glPopMatrix();
         }
     }

@@ -91,31 +91,31 @@ struct texture_buffer
 
 struct texture 
 {
-    memory::name mName;
+    memory::resource_id mId;
     texture_buffer* mCore = nullptr;
     texture_buffer* mClutBuffer = nullptr;
     GLuint mGLName;
 
-    texture(memory::name name, texture_buffer core) : mName(name), mGLName(0)
+    texture(memory::resource_id id, texture_buffer& core) : mId(id), mGLName(0)
     {
         mCore = new texture_buffer(std::move(core));
         glGenTextures(1, &mGLName);
         upload();
-        operator<<(log::out(log::kInfo) << "texture created: ") << std::endl;
+        log::out(log::kInfo) << "texture created: " << *this << std::endl;
     }
 
-    texture(memory::name name, texture_buffer core, texture_buffer clut) : mName(name)
+    texture(memory::resource_id id, texture_buffer& core, texture_buffer& clut) : mId(id)
     {
         mCore = new texture_buffer(std::move(core));
         mClutBuffer = new texture_buffer(std::move(clut));
         glGenTextures(1, &mGLName);
         upload();
-        operator<<(log::out(log::kInfo) << "texture created: ") << std::endl;
+        log::out(log::kInfo) << "texture created: " << *this << std::endl;
     }
 
-    virtual ~texture()
+    ~texture()
     {
-        operator<<(log::out(log::kInfo) << "texture deleted: ") << std::endl;
+        log::out(log::kInfo) << "texture deleted: " << *this << std::endl;
         if(mCore) delete mCore;
         if(mClutBuffer) delete mClutBuffer;
         if(mGLName != 0) glDeleteTextures(1, &mGLName);
@@ -149,33 +149,27 @@ struct texture
     int get_width() const { return mCore->mWidth; }
     int get_height() const { return mCore->mHeight; }
 
-    std::ostream& operator<<(std::ostream& os)
+    friend std::ostream& operator<<(std::ostream& os, const texture& texture)
     {
-        os << "texture uuid=\"" << mName.mName << "\" (" << (uint32_t) mName.mUuid << ")" << " GL=" << mGLName << " " << mCore->mWidth << "x" << mCore->mHeight; 
+        os << "texture uuid=" << texture.mId << " GL=" << texture.mGLName << " " << texture.mCore->mWidth << "x" << texture.mCore->mHeight; 
         return os;
     }
 
 };
 
-struct GsTextureHeader {
-    static const uint32_t MAGIC = 'G' | ('T' << 8) | ('E' << 16) | ('X' << 24);
-    uint32_t mMagic;
-    uint16_t mWidth;
-    uint16_t mHeight;
-    uint8_t mPsm;
-    uint16_t mClutWidth;
-    uint16_t mClutHeight;
-    uint8_t mClutPsm;
-    uint8_t mComponents;
-    uint8_t mFunction;
-} __attribute__ ((packed));
+using texture_ptr = std::shared_ptr<texture>;
 
-struct texture_manager
+class texture_manager;
+
+struct texture_deleter
 {
+    texture_manager* mTextureManager;
+    inline void operator()(texture* tex);
+};
 
-    // gotta love c++
-    std::map<uuid, std::unique_ptr<texture>> mTextures;
-
+class texture_manager
+{
+public:
     texture_manager(uint32_t vramStart, uint32_t vramEnd)
     {
         log::out(log::kInfo) << "initializing texture manager: vramStart=" << vramStart << ", vramEnd=" << vramEnd << std::endl;
@@ -192,47 +186,43 @@ struct texture_manager
     }
 
     void initialize_gs_memory(uint32_t vramStart, uint32_t vramEnd);
+    
+    texture_ptr load_gs_texture(const memory::resource_id& id, const std::string& path);
 
-    texture* load_texture(const memory::name& name, const std::string& path)
+    texture_ptr create_texture(const memory::resource_id& id, texture_buffer& core)
     {
-
-        if(ends_with(path, "gs"))
-        {
-            return load_gs_texture(name, path);
-        }
-        throw std::exception();
+        texture_ptr tex = texture_ptr(new texture(id, core), texture_deleter{this});
+        mTextures[id.mUuid] = tex;
+        return tex;
     }
 
-    texture* load_gs_texture(const memory::name& name, const std::string& path);
-
-    texture* create_texture(const memory::name& name, texture_buffer core)
+    texture_ptr create_texture(const memory::resource_id& id, texture_buffer& core, texture_buffer& clut)
     {
-        auto tex = std::make_unique<texture>(name, std::move(core));
-        texture* pointer = tex.get();
-        mTextures[name.mUuid] = std::move(tex);
-        return pointer;
+        texture_ptr tex = texture_ptr(new texture(id, core, clut), texture_deleter{this});
+        mTextures[id.mUuid] = tex;
+        return tex;
     }
 
-    texture* create_texture(const memory::name& name, texture_buffer core, texture_buffer clut)
-    {
-        auto tex = std::make_unique<texture>(name, std::move(core), std::move(clut));
-        texture* pointer = tex.get();
-        mTextures[name.mUuid] = std::move(tex);
-        return pointer;
-    }
-
-    texture* find_texture(const uuid& uuid)
+    texture_ptr find_texture(const uuid& uuid)
     {
         auto it = mTextures.find(uuid);
-        return it->second.get();
+        return it->second.lock();
     }
 
     void delete_texture(const uuid& uuid)
     {
         auto it = mTextures.find(uuid);
-        mTextures.erase(it);
+        if(it->second.expired()) mTextures.erase(it);
     }
-
+private:
+    // gotta love c++
+    std::map<uuid, std::weak_ptr<texture>> mTextures;
 };
+
+inline void texture_deleter::operator()(texture* tex) 
+{ 
+    mTextureManager->delete_texture(tex->mId.mUuid);
+    delete tex;
+}
     
 } // namespace engine

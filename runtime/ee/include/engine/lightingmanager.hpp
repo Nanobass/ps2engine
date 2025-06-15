@@ -38,12 +38,6 @@ namespace pse
 
 struct light
 {
-    static void deleter(light* light)
-    {
-        log::out(log::kDebug) << "deallocated light " << (light->mGLLightIndex - GL_LIGHT0) << std::endl;
-        light->mAllocated = false;
-        light->set_enabled(false);
-    }
 
     light(GLenum glLightIndex) : mGLLightIndex(glLightIndex) {}
 
@@ -73,15 +67,32 @@ struct light
 
 };
 
+using light_ptr = std::shared_ptr<light>;
+
+struct lighting_manager;
+
+struct light_deleter
+{
+    lighting_manager* mLightingManager;
+    inline void operator()(light* light);
+};
+
 struct lighting_manager
 {
-    bool mLightingEnabled = false;
     std::array<light, 8> mLights { GL_LIGHT0, GL_LIGHT1, GL_LIGHT2, GL_LIGHT3, GL_LIGHT4, GL_LIGHT5, GL_LIGHT6, GL_LIGHT7 };
-    math::color mGlobalAmbient = math::color(0.2F, 0.2F, 0.2F, 1.0F);
+    bool mLightingEnabled;
+    math::color mGlobalAmbient;
 
     lighting_manager()
     {
         log::out(log::kInfo) << "initializing lighting manager: number_of_lights=" << mLights.size() << std::endl;
+        set_lighting_enabled(false);
+        set_global_ambient(math::color(0.2F, 0.2F, 0.2F, 1.0F));
+    }
+
+    ~lighting_manager()
+    {
+        log::out(log::kInfo) << "terminate lighting manager" << std::endl;
     }
 
     bool is_lighting_enabled() { return mLightingEnabled; }
@@ -92,18 +103,37 @@ struct lighting_manager
         else glDisable(GL_LIGHTING);
     }
 
-    std::shared_ptr<light> allocate_light()
+    math::color get_global_ambient() { return mGlobalAmbient; }
+    void set_global_ambient(const math::color& color)
+    {
+        mGlobalAmbient = color;
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, mGlobalAmbient.vector);
+    }
+
+    light_ptr allocate_light()
     {
         for(auto& l : mLights)
             if(!l.mAllocated)
             {
                 l.mAllocated = true;
                 log::out(log::kDebug) << "allocated light " << (l.mGLLightIndex - GL_LIGHT0) << std::endl;
-                return std::shared_ptr<light>(&l, light::deleter);
+                return light_ptr(&l, light_deleter{this});
             }
         return nullptr;
     }
 
+    void delete_light(light* light)
+    {
+        log::out(log::kDebug) << "deallocated light " << (light->mGLLightIndex - GL_LIGHT0) << std::endl;
+        light->mAllocated = false;
+        light->set_enabled(false);
+    }
+
 };
+
+inline void light_deleter::operator()(light* light)
+{
+    mLightingManager->delete_light(light);
+}
     
 } // namespace pse

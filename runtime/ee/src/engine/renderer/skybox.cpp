@@ -30,7 +30,7 @@ void skybox_renderer::load_skybox(const std::string& img, float size, int divisi
 
     float subSize = size / (float) divisions;
 
-    mSkyTexture = mTextureManager->load_texture(img, img);
+    //mSkyTexture = mTextureManager->load_texture(img, img);
 
     mList = glGenLists(1);
     glNewList(mList, GL_COMPILE);
@@ -104,7 +104,7 @@ void skybox_renderer::load_skybox(const std::string& img, float size, int divisi
 void skybox_renderer::unload_skybox()
 {
     glDeleteLists(mList, 1);
-    mTextureManager->delete_texture(mSkyTexture->mName.mUuid);
+    //mTextureManager->delete_texture(mSkyTexture->mName.mUuid);
 }
 
 /*void skybox_renderer::render_sky(perspective_camera& camera, bool render)

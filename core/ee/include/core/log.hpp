@@ -93,6 +93,7 @@ void disable_log_level(log_level level);
 void set_log_level_enabled(log_level level, bool enabled);
 bool is_log_level_enabled(log_level level);
 
+std::ostream& out(log_device device, log_level level, const char* file = __builtin_FILE(), const int line = __builtin_LINE());
 std::ostream& out(log_level level, const char* file = __builtin_FILE(), const int line = __builtin_LINE());
 
 } // namespace pse::log

@@ -33,36 +33,6 @@
 namespace pse
 {
 
-namespace PS2
-{
-
-void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type)
-{
-    switch(psm)
-    {
-        case GS::kPsm32: 
-            format = GL_RGBA;
-            type = GL_UNSIGNED_BYTE;
-        break;
-        case GS::kPsm24: 
-            format = GL_RGB;
-            type = GL_UNSIGNED_BYTE;
-        break;
-        case GS::kPsm16:
-            format = GL_RGBA;
-            type = GL_UNSIGNED_SHORT_5_5_5_1;
-        break;
-        case GS::kPsm8:
-            format = GL_COLOR_INDEX;
-            type = GL_UNSIGNED_BYTE;
-        break;
-        default:
-        break;
-    }
-}
-
-} // namespace PS2
-
 void texture_manager::initialize_gs_memory(uint32_t vramStart, uint32_t vramEnd)
 {
     // this is a temporary arrangement, later texture pages will dynamically move these boundries
@@ -98,7 +68,50 @@ void texture_manager::initialize_gs_memory(uint32_t vramStart, uint32_t vramEnd)
     pglPrintGsMemAllocation();
 }
 
-texture* texture_manager::load_gs_texture(const memory::name& name, const std::string& path)
+struct GsTextureHeader {
+    static const uint32_t MAGIC = 'G' | ('T' << 8) | ('E' << 16) | ('X' << 24);
+    uint32_t mMagic;
+    uint16_t mWidth;
+    uint16_t mHeight;
+    uint8_t mPsm;
+    uint16_t mClutWidth;
+    uint16_t mClutHeight;
+    uint8_t mClutPsm;
+    uint8_t mComponents;
+    uint8_t mFunction;
+} __attribute__ ((packed));
+
+namespace PS2
+{
+
+void GetOpenGLFormatAndType(GS::tPSM psm, GLenum& format, GLenum& type)
+{
+    switch(psm)
+    {
+        case GS::kPsm32: 
+            format = GL_RGBA;
+            type = GL_UNSIGNED_BYTE;
+        break;
+        case GS::kPsm24: 
+            format = GL_RGB;
+            type = GL_UNSIGNED_BYTE;
+        break;
+        case GS::kPsm16:
+            format = GL_RGBA;
+            type = GL_UNSIGNED_SHORT_5_5_5_1;
+        break;
+        case GS::kPsm8:
+            format = GL_COLOR_INDEX;
+            type = GL_UNSIGNED_BYTE;
+        break;
+        default:
+        break;
+    }
+}
+
+} // namespace PS2
+
+texture_ptr texture_manager::load_gs_texture(const memory::resource_id& id, const std::string& path)
 {
     std::ifstream resource(path, std::ios_base::in);
     GsTextureHeader header;
@@ -126,9 +139,9 @@ texture* texture_manager::load_gs_texture(const memory::name& name, const std::s
         if(header.mClutPsm == GS_PSM_32) bpp = 32;
         texture_buffer clut(header.mClutWidth, header.mClutHeight, bpp, format, type);
         resource.read((char*) clut.mData.data(), clut.mData.size());
-        return create_texture(name, std::move(core), std::move(clut));
+        return create_texture(id, core, clut);
     } else {
-        return create_texture(name, std::move(core));
+        return create_texture(id, core);
     }
 }
 

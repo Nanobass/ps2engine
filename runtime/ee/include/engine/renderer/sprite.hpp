@@ -40,10 +40,18 @@ struct sprite_renderer
     sprite_renderer(texture_manager* textureManager) 
         :   mTextureManager(textureManager)
     {
-        mMaterial = std::make_unique<material>(math::color(1.0F, 1.0F, 1.0F, 1.0F), math::color(0.0F, 0.0F, 0.0F, 1.0F), math::color(0.0F, 0.0F, 0.0F, 1.0F));
+        mMaterial = std::make_unique<material>(
+            "sprite_default_material",
+            math::color(1.0F, 1.0F, 1.0F, 1.0F), 
+            math::color(0.0F, 0.0F, 0.0F, 1.0F), 
+            math::color(0.0F, 0.0F, 0.0F, 1.0F),
+            math::color(0.0F, 0.0F, 0.0F, 1.0F),
+            0.0F,
+            0
+        );
     }
 
-    void render_sprite(texture* texture, const math::texel& offset, const math::texel& scale, const math::color& tint = math::color(1.0F, 1.0F, 1.0F, 1.0F))
+    void render_sprite(texture_ptr texture, const math::texel& offset, const math::texel& scale, const math::color& tint = math::color(1.0F, 1.0F, 1.0F, 1.0F))
     {
         texture->bind();
         mMaterial->mAmbient = tint;
