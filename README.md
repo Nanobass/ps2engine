@@ -7,3 +7,4 @@ Making a Game Engine that can run levels created in an editor
 - Decent Graphics (Character Animation, Specialized Renderers)
 - Save Games
 - Scene Editor
+- Performance Analysis Tool (via EE SIO and a PC program)
